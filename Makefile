@@ -738,7 +738,6 @@ KBUILD_CFLAGS	+= -mllvm -polly \
                    -mllvm -polly-run-export-jscop \
 		   -mllvm -polly-delicm-max-ops=0 \
                    -mllvm -polly-2nd-level-tiling \
-		   
                    -mllvm -polly-omp-backend=LLVM \
                    -mllvm -polly-use-llvm-names \
                    -mllvm -polly-position=early \
