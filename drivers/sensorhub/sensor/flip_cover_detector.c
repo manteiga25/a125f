@@ -48,21 +48,29 @@ void report_event_flip_cover_detector(void)
 		check_cover_detection_factory();
 }
 
-void init_flip_cover_detector(bool en)
+int init_flip_cover_detector(bool en)
 {
 	struct shub_sensor *sensor = get_sensor(SENSOR_TYPE_FLIP_COVER_DETECTOR);
 
 	if (!sensor)
-		return;
+		return 0;
 
 	if (en) {
 		strcpy(sensor->name, "flip_cover_detector");
 		sensor->receive_event_size = 22;
 		sensor->report_event_size = 9;
 		sensor->event_buffer.value = kzalloc(sizeof(struct flip_cover_detector_event), GFP_KERNEL);
+		if (!sensor->event_buffer.value)
+			goto err_no_mem;
 
 		sensor->data = kzalloc(sizeof(struct flip_cover_detector_data), GFP_KERNEL);
+		if (!sensor->data)
+			goto err_no_mem;
+
 		sensor->funcs = kzalloc(sizeof(struct sensor_funcs), GFP_KERNEL);
+		if (!sensor->funcs)
+			goto err_no_mem;
+
 		sensor->funcs->sync_status = sync_flip_cover_detector_status;
 		sensor->funcs->report_event = report_event_flip_cover_detector;
 		sensor->funcs->print_debug = print_flip_cover_detector_debug;
@@ -78,4 +86,17 @@ void init_flip_cover_detector(bool en)
 		kfree(sensor->funcs);
 		sensor->funcs = NULL;
 	}
+	return 0;
+
+err_no_mem:
+	kfree(sensor->event_buffer.value);
+	sensor->event_buffer.value = NULL;
+
+	kfree(sensor->data);
+	sensor->data = NULL;
+
+	kfree(sensor->funcs);
+	sensor->funcs = NULL;
+
+	return -ENOMEM;
 }

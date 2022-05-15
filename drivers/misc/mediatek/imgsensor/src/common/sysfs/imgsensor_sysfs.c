@@ -79,6 +79,7 @@ struct imgsensor_rom_info *finfo[SENSOR_POSITION_MAX] = {NULL,};
 struct ssrm_camera_data SsrmCameraInfo[IMGSENSOR_SENSOR_COUNT];
 
 static int current_sensor_pos = 0;
+bool sr846d_is_default_cal;
 
 struct class   *camera_class = NULL;
 struct device  *camera_rear_dev;
@@ -2072,7 +2073,7 @@ static int imgsensor_rom_read_common(unsigned char *pRomData, struct imgsensor_e
 
 			rom_addr = vendor_rom_info[i].rom_addr;
 			vendor_rom_addr[info->sensor_position] = rom_addr;
-			pr_info("[%s] sensor position: %d, sensor_id: %#06x \n", __func__,
+			pr_info("[%s] sensor position: %d, sensor_id: %#06x\n", __func__,
 					info->sensor_position, info->sensor_id);
 			break;
 		}
@@ -2543,6 +2544,10 @@ const struct imgsensor_vendor_rom_addr *imgsensor_sys_get_rom_addr_by_id(
 	return vendor_rom_info[i].rom_addr;
 }
 
+bool get_sr846d_is_default_cal(void)
+{
+	return sr846d_is_default_cal;
+}
 
 int imgsensor_sysfs_update(unsigned char* pRomData, unsigned int dualDeviceId, unsigned int sensorId, unsigned int offset, unsigned int length, int i4RetValue)
 {
@@ -2552,6 +2557,9 @@ int imgsensor_sysfs_update(unsigned char* pRomData, unsigned int dualDeviceId, u
 	unsigned int remapped_device_id = 0;
 	int cal_size = 0;
 	int ret = 0;
+
+	if (sensorId == SR846D_SENSOR_ID)
+		sr846d_is_default_cal = true;
 
 	pr_info("%s : deviceID=%d, sensorID=0x%X, offset=%d, length=%d, i4RetValue=%d", __func__, deviceIdx, sensorId, offset, length, i4RetValue);
 	if (deviceIdx == IMGSENSOR_SENSOR_IDX_NONE)
@@ -2587,6 +2595,11 @@ int imgsensor_sysfs_update(unsigned char* pRomData, unsigned int dualDeviceId, u
 #if ENABLE_CAM_CAL_DUMP
 	imgsensor_sec_readcal_dump(pRomData, length, remapped_device_id);
 #endif
+
+	if (sensorId == SR846D_SENSOR_ID) {
+		sr846d_is_default_cal = (ret < 0) ? true : false;
+		pr_info("sr846d_is_default_cal: %d, ret: %d", sr846d_is_default_cal, ret);
+	}
 	return ret;
 }
 

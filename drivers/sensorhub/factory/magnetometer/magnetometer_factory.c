@@ -284,7 +284,7 @@ void remove_magnetometer_sysfs(void)
 
 void initialize_magnetometer_factory(bool en)
 {
-	if (!get_sensor_probe_state(SENSOR_TYPE_GEOMAGNETIC_FIELD))
+	if (!get_sensor(SENSOR_TYPE_GEOMAGNETIC_FIELD))
 		return;
 
 	if (en)

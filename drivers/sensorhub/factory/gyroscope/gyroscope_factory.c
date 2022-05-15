@@ -166,7 +166,7 @@ void remove_gyroscope_sysfs(void)
 
 void initialize_gyroscope_factory(bool en)
 {
-	if (!get_sensor_probe_state(SENSOR_TYPE_GYROSCOPE))
+	if (!get_sensor(SENSOR_TYPE_GYROSCOPE))
 		return;
 	if (en)
 		initialize_gyroscope_sysfs();

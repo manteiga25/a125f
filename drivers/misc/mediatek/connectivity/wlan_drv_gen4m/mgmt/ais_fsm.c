@@ -495,7 +495,7 @@ void aisFsmInit(IN struct ADAPTER *prAdapter, uint8_t ucBssIndex)
 		   sizeof(prAisSpecificBssInfo->arCurEssChnlInfo));
 	LINK_INITIALIZE(&prAisSpecificBssInfo->rCurEssLink);
 	/* end Support AP Selection */
-	LINK_INITIALIZE(&prAisSpecificBssInfo->rPmkidCache);
+	LINK_INITIALIZE(&prAisBssInfo->rPmkidCache);
 	/* 11K, 11V */
 	LINK_MGMT_INIT(&prAisSpecificBssInfo->rNeighborApList);
 	kalMemZero(&prAisSpecificBssInfo->rBTMParam,
@@ -724,9 +724,23 @@ void aisFsmStateInit_JOIN(IN struct ADAPTER *prAdapter,
 		prStaRec->fgIsReAssoc = FALSE;
 
 		switch (prConnSettings->eAuthMode) {
+		case AUTH_MODE_OPEN:
+			if (prConnSettings->rRsnInfo.au4AuthKeyMgtSuite[0]
+					== WLAN_AKM_SUITE_SAE) {
+				prAisFsmInfo->ucAvailableAuthTypes =
+				(uint8_t) (AUTH_TYPE_OPEN_SYSTEM |
+					AUTH_TYPE_SAE);
+				DBGLOG(AIS, INFO,
+					"JOIN INIT: eAuthMode == OPEN | SAE\n");
+			} else {
+				prAisFsmInfo->ucAvailableAuthTypes =
+				(uint8_t) AUTH_TYPE_OPEN_SYSTEM;
+				DBGLOG(AIS, INFO,
+					"JOIN INIT: eAuthMode == OPEN\n");
+			}
+			break;
 		case AUTH_MODE_WPA2_FT:
 		case AUTH_MODE_WPA2_FT_PSK:
-		case AUTH_MODE_OPEN:	/* Note: Omit break here. */
 		case AUTH_MODE_WPA:
 		case AUTH_MODE_WPA_PSK:
 		case AUTH_MODE_WPA2:
@@ -941,10 +955,12 @@ u_int8_t aisFsmStateInit_RetryJOIN(IN struct ADAPTER *prAdapter,
 {
 	struct AIS_FSM_INFO *prAisFsmInfo;
 	struct MSG_SAA_FSM_START *prJoinReqMsg;
+	struct CONNECTION_SETTINGS *prConnSettings;
 
 	DEBUGFUNC("aisFsmStateInit_RetryJOIN()");
 
 	prAisFsmInfo = aisGetAisFsmInfo(prAdapter, ucBssIndex);
+	prConnSettings = aisGetConnSettings(prAdapter, ucBssIndex);
 
 	/* Retry other AuthType if possible */
 	if (!prAisFsmInfo->ucAvailableAuthTypes)
@@ -953,12 +969,28 @@ u_int8_t aisFsmStateInit_RetryJOIN(IN struct ADAPTER *prAdapter,
 	if ((prStaRec->u2StatusCode !=
 		STATUS_CODE_AUTH_ALGORITHM_NOT_SUPPORTED) &&
 		(prStaRec->u2StatusCode !=
-		STATUS_CODE_AUTH_TIMEOUT)) {
+		STATUS_CODE_AUTH_TIMEOUT) &&
+		(prStaRec->u2StatusCode !=
+		STATUS_CODE_INVALID_INFO_ELEMENT) &&
+		(prStaRec->u2StatusCode !=
+		STATUS_INVALID_PMKID)) {
 		prAisFsmInfo->ucAvailableAuthTypes = 0;
 		return FALSE;
 	}
 
-	if (prAisFsmInfo->ucAvailableAuthTypes & (uint8_t)
+	if (prConnSettings->rRsnInfo.au4AuthKeyMgtSuite[0]
+		== WLAN_AKM_SUITE_SAE &&
+		prAisFsmInfo->ucAvailableAuthTypes & (uint8_t)
+		AUTH_TYPE_SAE) {
+		DBGLOG(AIS, INFO,
+			   "RETRY JOIN INIT: Retry Authentication with AuthType == SAE.\n");
+
+		prAisFsmInfo->ucAvailableAuthTypes &=
+			~(uint8_t) AUTH_TYPE_SAE;
+
+		prStaRec->ucAuthAlgNum =
+			(uint8_t) AUTH_ALGORITHM_NUM_SAE;
+	} else if (prAisFsmInfo->ucAvailableAuthTypes & (uint8_t)
 	    AUTH_TYPE_OPEN_SYSTEM) {
 
 		DBGLOG(AIS, INFO,
@@ -1337,7 +1369,7 @@ void aisFsmNotifyManageChannelList(
 	uint8_t essChnlNum = 0;
 	uint8_t size = 0;
 
-	wiphy = priv_to_wiphy(prAdapter->prGlueInfo);
+	wiphy = prAdapter->prGlueInfo->prDevHandler->ieee80211_ptr->wiphy;
 	wdev = wlanGetNetDev(prAdapter->prGlueInfo, ucBssIndex)->ieee80211_ptr;
 	ais = aisGetAisSpecBssInfo(prAdapter, ucBssIndex);
 	conn = aisGetConnSettings(prAdapter, ucBssIndex);
@@ -2097,6 +2129,18 @@ void aisFsmSteps(IN struct ADAPTER *prAdapter,
 				ENUM_SW_TEST_MODE_SIGMA_VOICE_ENT)) {
 				prScanReqMsg->u2ChannelDwellTime =
 					SCAN_BEACON_TIMEOUT_DWELL_TIME_MSEC;
+				prScanReqMsg->u2ChannelMinDwellTime =
+					SCAN_CHANNEL_DWELL_TIME_MIN_MSEC;
+			}
+			/* VOE Cert. test set dwell time to 50ms */
+			if (prAdapter->rWifiVar.u4SwTestMode ==
+			    ENUM_SW_TEST_MODE_SIGMA_VOICE_ENT &&
+			    (aisFsmIsInProcessPostpone(prAdapter, ucBssIndex) ||
+			    prAisBssInfo->eConnectionState ==
+						MEDIA_STATE_CONNECTED)) {
+				prScanReqMsg->u2ChannelDwellTime =
+					SCAN_CHANNEL_DWELL_TIME_MIN_MSEC +
+					SCAN_CHANNEL_DWELL_TIME_LISTEN_MIN_MSEC;
 				prScanReqMsg->u2ChannelMinDwellTime =
 					SCAN_CHANNEL_DWELL_TIME_MIN_MSEC;
 			}
@@ -2972,7 +3016,7 @@ void aisFsmRunEventJoinComplete(IN struct ADAPTER *prAdapter,
 	cnmMemFree(prAdapter, prMsgHdr);
 }				/* end of aisFsmRunEventJoinComplete() */
 
-bool aisHandleTemporaryReject(IN struct ADAPTER *prAdapter,
+bool  aisHandleTemporaryReject(IN struct ADAPTER *prAdapter,
 			      IN struct STA_RECORD *prStaRec) {
 #if CFG_SUPPORT_802_11W
 	struct AIS_FSM_INFO *prAisFsmInfo;
@@ -2987,16 +3031,10 @@ bool aisHandleTemporaryReject(IN struct ADAPTER *prAdapter,
 		/* record temporarily rejected AP for SA query */
 		prAisSpecificBssInfo->prTargetComebackBssDesc =
 			prAisFsmInfo->prTargetBssDesc;
-		if (prStaRec->u4assocComeBackTime < 500) {
-			DBGLOG(AIS, INFO, "reassign comeback interval from %u msec to 1000TU \n",
-				TU_TO_MSEC(prStaRec->u4assocComeBackTime));
-			prAisFsmInfo->u4SleepInterval = TU_TO_MSEC(1000);
-		} else {
 		prAisFsmInfo->u4SleepInterval =
-			TU_TO_MSEC(prStaRec->u4assocComeBackTime);
-		}
+				TU_TO_MSEC(prStaRec->u4assocComeBackTime);
 		DBGLOG(AIS, INFO, "reschedule a comeback timer %u msec\n",
-			TU_TO_MSEC(prAisFsmInfo->u4SleepInterval));
+			TU_TO_MSEC(prStaRec->u4assocComeBackTime));
 		return true;
 	}
 	return false;
@@ -3264,9 +3302,10 @@ enum ENUM_AIS_STATE aisFsmJoinCompleteAction(IN struct ADAPTER *prAdapter,
 				if (prStaRec != prAisBssInfo->prStaRecOfAP)
 					cnmStaRecFree(prAdapter, prStaRec);
 
-				if (aisHandleTemporaryReject(prAdapter, prStaRec)
-					|| prAisBssInfo->eConnectionState ==
-				    MEDIA_STATE_CONNECTED) {
+				if (aisHandleTemporaryReject(prAdapter,
+					prStaRec) ||
+				    prAisBssInfo->eConnectionState ==
+					MEDIA_STATE_CONNECTED) {
 					struct PARAM_SSID rSsid;
 					/* roaming fail count and time */
 					prAdapter->prGlueInfo->u4RoamFailCnt++;
@@ -3311,6 +3350,14 @@ enum ENUM_AIS_STATE aisFsmJoinCompleteAction(IN struct ADAPTER *prAdapter,
 					 * , or AP block STA
 					 */
 					eNextState = AIS_STATE_JOIN_FAILURE;
+#if CFG_TC10_FEATURE
+				} else if (prStaRec->u2ReasonCode ==
+						REASON_CODE_PREV_AUTH_INVALID) {
+					/* Receive DEAUTH instead of ASSOC
+					 * RESP, stop JOIN
+					 */
+					eNextState = AIS_STATE_JOIN_FAILURE;
+#endif
 				} else {
 					/* 4.b send reconnect request */
 					aisFsmInsertRequest(prAdapter,
@@ -3825,6 +3872,18 @@ aisIndicationOfMediaStateToHost(IN struct ADAPTER *prAdapter,
 			    prAisBssInfo->ucReasonOfDisconnect;
 		}
 
+		if (prAisBssInfo->ucReasonOfDisconnect ==
+			DISCONNECT_REASON_CODE_RADIO_LOST ||
+		    prAisBssInfo->ucReasonOfDisconnect ==
+			DISCONNECT_REASON_CODE_RADIO_LOST_TX_ERR) {
+			scanRemoveBssDescByBssid(prAdapter,
+						 prAisBssInfo->aucBSSID);
+
+			/* remove from scanning results as well */
+			wlanClearBssInScanningResult(prAdapter,
+						     prAisBssInfo->aucBSSID);
+		}
+
 		/* 4 <2> Indication */
 		nicMediaStateChange(prAdapter,
 				    prAisBssInfo->ucBssIndex,
@@ -3862,12 +3921,6 @@ void aisPostponedEventOfDisconnTimeout(IN struct ADAPTER *prAdapter,
 	bool fgIsPostponeTimeout;
 	enum ENUM_PARAM_CONNECTION_POLICY policy;
 
-#if CFG_SUPPORT_802_11W
-	struct AIS_SPECIFIC_BSS_INFO *prAisSpecificBssInfo;
-
-	prAisSpecificBssInfo = aisGetAisSpecBssInfo(prAdapter, ucBssIndex);
-#endif
-
 	prAisFsmInfo = aisGetAisFsmInfo(prAdapter, ucBssIndex);
 	/* firstly, check if we have started postpone indication.
 	 ** otherwise, give a chance to do join before indicate to host
@@ -3900,17 +3953,6 @@ void aisPostponedEventOfDisconnTimeout(IN struct ADAPTER *prAdapter,
 		       "DelayTimeOfDisconnect, don't report disconnect\n");
 		return;
 	}
-
-#if CFG_SUPPORT_802_11W
-	/* for temporary reject */
-	if (policy != CONNECT_BY_BSSID && !fgIsPostponeTimeout &&
-		prAisSpecificBssInfo->prTargetComebackBssDesc &&
-		!(prAisFsmInfo->ucConnTrialCount > 5)) {
-		DBGLOG(AIS, INFO,
-			"DelayTimeOfDisconnect for temporary reject, don't report disconnect\n");
-		return;
-	}
-#endif
 
 	/* 4 <2> Remove all connection request */
 	while (fgFound)
@@ -4455,23 +4497,34 @@ void aisFsmDisconnect(IN struct ADAPTER *prAdapter,
 			u2ReasonCode =
 				prAisBssInfo->prStaRecOfAP->u2ReasonCode;
 		}
-		if (prAisBssInfo->ucReasonOfDisconnect ==
-			DISCONNECT_REASON_CODE_RADIO_LOST ||
-		    prAisBssInfo->ucReasonOfDisconnect ==
-			DISCONNECT_REASON_CODE_RADIO_LOST_TX_ERR) {
-			scanRemoveBssDescByBssid(prAdapter,
-						 prAisBssInfo->aucBSSID);
+		scanRemoveConnFlagOfBssDescByBssid(prAdapter,
+			prAisBssInfo->aucBSSID);
+		prBssDesc = aisGetTargetBssDesc(prAdapter, ucBssIndex);
+		if (prBssDesc) {
+			prBssDesc->fgIsConnected = FALSE;
+			prBssDesc->fgIsConnecting = FALSE;
+			if (prAisBssInfo->ucReasonOfDisconnect ==
+				DISCONNECT_REASON_CODE_RADIO_LOST ||
+			    prAisBssInfo->ucReasonOfDisconnect ==
+				DISCONNECT_REASON_CODE_RADIO_LOST_TX_ERR) {
+				struct SCAN_INFO *prScanInfo;
+				struct LINK *prBSSDescList;
+				struct BSS_DESC *prBssDesc2;
 
-			/* remove from scanning results as well */
-			wlanClearBssInScanningResult(prAdapter,
-						     prAisBssInfo->aucBSSID);
-		} else {
-			scanRemoveConnFlagOfBssDescByBssid(prAdapter,
-				prAisBssInfo->aucBSSID);
-			prBssDesc = aisGetTargetBssDesc(prAdapter, ucBssIndex);
-			if (prBssDesc) {
-				prBssDesc->fgIsConnected = FALSE;
-				prBssDesc->fgIsConnecting = FALSE;
+				DBGLOG(AIS, ERROR, ""MACSTR" is in BTO",
+					prBssDesc->aucBSSID);
+
+				prScanInfo = &(prAdapter->rWifiVar.rScanInfo);
+				prBSSDescList = &prScanInfo->rBSSDescList;
+				LINK_FOR_EACH_ENTRY(prBssDesc2, prBSSDescList,
+					rLinkEntry, struct BSS_DESC) {
+
+					if (EQUAL_MAC_ADDR(prBssDesc2->aucBSSID,
+						prAisBssInfo->aucBSSID)) {
+						prBssDesc2->fgIsInBTO = TRUE;
+						break;
+					}
+				}
 			}
 		}
 
@@ -6597,7 +6650,7 @@ struct AIS_BLACKLIST_ITEM *aisQueryBlackList(struct ADAPTER *prAdapter,
 
 	LINK_FOR_EACH_ENTRY(prEntry, prBlackList, rLinkEntry,
 			    struct AIS_BLACKLIST_ITEM) {
-		if (EQUAL_MAC_ADDR(prBssDesc->aucBSSID, prEntry) &&
+		if (EQUAL_MAC_ADDR(prBssDesc->aucBSSID, prEntry->aucBSSID) &&
 		    EQUAL_SSID(prBssDesc->aucSSID, prBssDesc->ucSSIDLen,
 			       prEntry->aucSSID, prEntry->ucSSIDLen)) {
 			prBssDesc->prBlack = prEntry;

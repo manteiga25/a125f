@@ -147,10 +147,6 @@ struct gf_device {
 	/* for netlink use */
 	int pid;
 
-	struct work_struct work_debug;
-	struct workqueue_struct *wq_dbg;
-	struct timer_list dbg_timer;
-
 #ifndef ENABLE_SENSORS_FPRINT_SECURE
 	u8 *spi_buffer;
 	u8 *tx_buf;
@@ -172,6 +168,7 @@ struct gf_device {
 	struct pinctrl_state *pins_poweroff;
 	struct spi_clk_setting *clk_setting;
 	struct boosting_config *boosting;
+	struct debug_logger *logger;
 };
 
 
@@ -179,12 +176,9 @@ int gw3x_get_gpio_dts_info(struct device *dev, struct gf_device *gf_dev);
 void gw3x_cleanup_info(struct gf_device *gf_dev);
 void gw3x_hw_power_enable(struct gf_device *gf_dev, u8 onoff);
 void gw3x_hw_reset(struct gf_device *gf_dev, u8 delay);
-void gw3x_spi_setup_conf(struct gf_device *gf_dev, u32 speed);
-int gw3x_pin_control(struct gf_device *gf_dev, bool pin_set);
-int gw3x_register_platform_variable(struct gf_device *gf_dev);
-int gw3x_unregister_platform_variable(struct gf_device *gf_dev);
 
 #ifndef ENABLE_SENSORS_FPRINT_SECURE
+void gw3x_spi_setup_conf(struct gf_device *gf_dev, u32 bits);
 int gw3x_spi_read_bytes(struct gf_device *gf_dev, u16 addr,
 		u32 data_len, u8 *rx_buf);
 int gw3x_spi_write_bytes(struct gf_device *gf_dev, u16 addr,

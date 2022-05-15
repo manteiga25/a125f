@@ -10,13 +10,17 @@
 #include <linux/of_gpio.h>
 #include <linux/slab.h>
 
-static void init_proximity_variable(struct proximity_data *data)
+static int init_proximity_variable(struct proximity_data *data)
 {
 	if (data->chipset_funcs && data->chipset_funcs->init_proximity_variable)
 		data->chipset_funcs->init_proximity_variable(data);
 
-	if (data->cal_data_len)
+	if (data->cal_data_len) {
 		data->cal_data = kzalloc(data->cal_data_len, GFP_KERNEL);
+		if (data->cal_data)
+			return -ENOMEM;
+	}
+	return 0;
 }
 
 static void parse_dt_proximity(struct device *dev)
@@ -99,7 +103,7 @@ get_proximity_function_pointer *get_prox_funcs_ary[] = {
 
 int init_proximity_chipset(char *name, char *vendor)
 {
-	int i;
+	int i, ret;
 	struct shub_sensor *sensor = get_sensor(SENSOR_TYPE_PROXIMITY);
 	struct proximity_data *data = sensor->data;
 	struct proximity_chipset_funcs *funcs;
@@ -128,9 +132,9 @@ int init_proximity_chipset(char *name, char *vendor)
 	}
 
 	parse_dt_proximity(get_shub_device());
-	init_proximity_variable(data);
+	ret = init_proximity_variable(data);
 
-	return 0;
+	return ret;
 }
 
 static int sync_proximity_status(void)
@@ -266,21 +270,29 @@ int open_proximity_calibration(void)
 	return ret;
 }
 
-void init_proximity(bool en)
+int init_proximity(bool en)
 {
 	struct shub_sensor *sensor = get_sensor(SENSOR_TYPE_PROXIMITY);
 
 	if (!sensor)
-		return;
+		return 0;
 
 	if (en) {
 		strcpy(sensor->name, "proximity_sensor");
 		sensor->receive_event_size = 3;
 		sensor->report_event_size = 1;
 		sensor->event_buffer.value = kzalloc(sizeof(struct prox_event), GFP_KERNEL);
+		if (!sensor->event_buffer.value)
+			goto err_no_mem;
 
 		sensor->data = kzalloc(sizeof(struct proximity_data), GFP_KERNEL);
+		if (!sensor->data)
+			goto err_no_mem;
+
 		sensor->funcs = kzalloc(sizeof(struct sensor_funcs), GFP_KERNEL);
+		if (!sensor->funcs)
+			goto err_no_mem;
+
 		sensor->funcs->enable = enable_proximity;
 		sensor->funcs->sync_status = sync_proximity_status;
 		sensor->funcs->print_debug = print_debug_proximity;
@@ -304,4 +316,17 @@ void init_proximity(bool en)
 		kfree(sensor->event_buffer.value);
 		sensor->event_buffer.value = NULL;
 	}
+	return 0;
+
+err_no_mem:
+	kfree(sensor->event_buffer.value);
+	sensor->event_buffer.value = NULL;
+
+	kfree(sensor->data);
+	sensor->data = NULL;
+
+	kfree(sensor->funcs);
+	sensor->funcs = NULL;
+
+	return -ENOMEM;
 }

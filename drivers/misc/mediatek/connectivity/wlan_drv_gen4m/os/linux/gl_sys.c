@@ -58,7 +58,15 @@
 static struct GLUE_INFO *g_prGlueInfo;
 static struct kobject *wifi_kobj;
 static uint8_t aucMacAddrOverride[] = "FF:FF:FF:FF:FF:FF";
-static uint8_t aucDefaultFWVersion[] = "t-neptune-mp-soc1_0e1-1950-tc10sp-TALBOT_SOC1_0_E1_ASIC-20210209123002";
+#if defined(CFG_MOUTON)
+static uint8_t aucDefaultFWVersion[] = "t-neptune-main-soc2_0-2024-tc10sp-MOUTON_SOC2_0_E1_MT6631_ASIC-20210624154210";
+#elif defined(CFG_TALBOT)
+static uint8_t aucDefaultFWVersion[] = "t-neptune-mp-soc1_0e1-1950-tc10sp-TALBOT_SOC1_0_E1_ASIC-20210629123001";
+#elif defined(CFG_CERVENO)
+static uint8_t aucDefaultFWVersion[] = "t-neptune-mp-soc1_0e1-1950-tc10sp-CERVINO_SOC1_0_1C_E1_ASIC-20210629123001";
+#else
+static uint8_t aucDefaultFWVersion[] = "Unknown";
+#endif
 static u_int8_t fgIsMacAddrOverride = FALSE;
 static int32_t g_i4PM = -1;
 static int32_t g_i4Ant = -1;
@@ -359,7 +367,7 @@ void sysCreateWifiVer(void)
 
 	char aucDriverVersionStr[] = STR(NIC_DRIVER_MAJOR_VERSION) "_"
 		STR(NIC_DRIVER_MINOR_VERSION) "_"
-		STR(NIC_DRIVER_SERIAL_VERSION) "-security-"
+		STR(NIC_DRIVER_SERIAL_VERSION) "-"
 		DRIVER_BUILD_DATE;
 	uint16_t u2NvramVer = 0;
 	uint8_t ucOffset = 0;
@@ -469,17 +477,11 @@ void sysCreateSoftap(void)
 		ucOffset += kalSnprintf(acSoftAPInfo + ucOffset
 			, MTK_INFO_MAX_SIZE - ucOffset
 			, "5G=%s\n", prRegInfo->ucEnable5GBand ? "yes" : "no");
-	else {
-#if defined(CFG_CERVENO)
-		ucOffset += kalSnprintf(acSoftAPInfo + ucOffset
-			, MTK_INFO_MAX_SIZE - ucOffset
-			, "5G=no\n");
-#else
+	else
 		ucOffset += kalSnprintf(acSoftAPInfo + ucOffset
 			, MTK_INFO_MAX_SIZE - ucOffset
 			, "5G=yes\n");
-#endif
-	}
+
 	ucOffset += kalSnprintf(acSoftAPInfo + ucOffset
 		, MTK_INFO_MAX_SIZE - ucOffset
 		, "maxClient=%d\n", P2P_MAXIMUM_CLIENT_COUNT);

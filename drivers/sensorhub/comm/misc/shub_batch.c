@@ -70,18 +70,25 @@ static struct file_operations shub_batch_fops = {
 	.owner = THIS_MODULE,
 	.open = nonseekable_open,
 	.unlocked_ioctl = shub_batch_ioctl,
+#ifdef CONFIG_COMPAT
+	.compat_ioctl = shub_batch_ioctl,
+#endif
 };
 
 int register_misc_dev_batch(bool en)
 {
 	int res = 0;
-	if(en) {
+
+	if (en) {
 		batch_io_device.minor = MISC_DYNAMIC_MINOR;
 		batch_io_device.name = "batch_io";
 		batch_io_device.fops = &shub_batch_fops;
 		res = misc_register(&batch_io_device);
 	} else {
 		shub_batch_fops.unlocked_ioctl = NULL;
+#ifdef CONFIG_COMPAT
+		shub_batch_fops.compat_ioctl = NULL;
+#endif
 		misc_deregister(&batch_io_device);
 	}
 

@@ -1,7 +1,7 @@
 #ifndef _SHUB_WAIT_EVENT_H__
 #define _SHUB_WAIT_EVENT_H__
 
-#include <linux/wakelock.h>
+#include <linux/wait.h>
 
 struct shub_waitevent {
 	wait_queue_head_t waitqueue;

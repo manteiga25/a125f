@@ -338,8 +338,14 @@ int sec_bat_parse_dt(struct device *dev,
 	else
 		pdata->support_fgsrc_change = true;
 
+	pdata->chg_vbus_control_after_fullcharged = of_property_read_bool(np,
+						"battery,chg_vbus_control_after_fullcharged");
+
 	pdata->volt_from_pmic = of_property_read_bool(np,
 						     "battery,volt_from_pmic");
+
+	pdata->pd_comm_cap = of_property_read_bool(np,
+						     "battery,pd_comm_cap");
 
 	ret = of_property_read_string(np,
 		"battery,chip_vendor", (char const **)&pdata->chip_vendor);
@@ -1634,6 +1640,12 @@ int sec_bat_parse_dt(struct device *dev,
 		pdata->full_condition_type, pdata->recharge_condition_type, pdata->full_check_type
 		);
 
+	ret = of_property_read_u32(np, "battery,batt_temp_adj_gap_inc",
+		&pdata->batt_temp_adj_gap_inc);
+	if (ret) {
+		pr_err("%s: batt_temp_adj_gap_inc is Empty\n", __func__);
+		pdata->batt_temp_adj_gap_inc = 0;
+	}
 #if defined(CONFIG_STEP_CHARGING)
 	sec_step_charging_init(battery, dev);
 #endif

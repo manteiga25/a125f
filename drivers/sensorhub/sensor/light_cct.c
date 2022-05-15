@@ -71,20 +71,25 @@ void print_light_cct_debug(void)
 		  sensor->max_report_latency);
 }
 
-void init_light_cct(bool en)
+int init_light_cct(bool en)
 {
 	struct shub_sensor *sensor = get_sensor(SENSOR_TYPE_LIGHT_CCT);
 
 	if (!sensor)
-		return;
+		return 0;
 
 	if (en) {
 		strcpy(sensor->name, "light_cct_sensor");
 		sensor->receive_event_size = 24;
 		sensor->report_event_size = 14;
 		sensor->event_buffer.value = kzalloc(sizeof(struct light_cct_event), GFP_KERNEL);
+		if (!sensor->event_buffer.value)
+			goto err_no_mem;
 
 		sensor->funcs = kzalloc(sizeof(struct sensor_funcs), GFP_KERNEL);
+		if (!sensor->funcs)
+			goto err_no_mem;
+
 		sensor->funcs->enable = enable_light_cct;
 		sensor->funcs->report_event = report_event_light_cct;
 		sensor->funcs->print_debug = print_light_cct_debug;
@@ -97,5 +102,14 @@ void init_light_cct(bool en)
 		sensor->event_buffer.value = NULL;
 	}
 
-	return;
+	return 0;
+
+err_no_mem:
+	kfree(sensor->event_buffer.value);
+	sensor->event_buffer.value = NULL;
+
+	kfree(sensor->funcs);
+	sensor->funcs = NULL;
+
+	return -ENOMEM;
 }

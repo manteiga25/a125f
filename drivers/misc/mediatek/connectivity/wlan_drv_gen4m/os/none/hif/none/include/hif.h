@@ -168,6 +168,9 @@ struct BUS_INFO {
 
 uint8_t halTxRingDataSelect(IN struct ADAPTER *prAdapter,
 	IN struct MSDU_INFO *prMsduInfo);
+void halPdmaSlpprotOp(IN struct GLUE_INFO *prGlueInfo,
+							IN uint8_t ucEnable);
+
 
 /*******************************************************************************
  *                              F U N C T I O N S

@@ -54,7 +54,7 @@ static ssize_t proximity_modify_settings_show(struct device *dev,
 	struct proximity_gp2ap110s_data *thd_data = data->threshold_data;
 
 	sensor->funcs->open_calibration_file();
-	return thd_data->prox_setting_mode;
+	return snprintf(buf, PAGE_SIZE, "%d\n", thd_data->prox_setting_mode);
 }
 
 static ssize_t proximity_modify_settings_store(struct device *dev,
@@ -77,6 +77,7 @@ static ssize_t proximity_modify_settings_store(struct device *dev,
 	}
 
 	shub_infof("prox_setting %d", mode);
+	thd_data->prox_setting_mode = mode;
 
 	ret = save_proximity_setting_mode();
 	if (mode == 2)
@@ -185,9 +186,23 @@ static ssize_t prox_trim_show(struct device *dev, struct device_attribute *attr,
 	return ret;
 }
 
+
+static ssize_t prox_cal_store(struct device *dev, struct device_attribute *attr, const char *buf, size_t size)
+{
+	int ret = 0;
+	int result = 0;
+
+	ret = kstrtoint(buf, 10, &result);
+	if (ret < 0)
+		shub_errf("kstrtoint failed. %d", ret);
+
+	return size;
+}
+
 static DEVICE_ATTR_RO(name);
 static DEVICE_ATTR_RO(vendor);
 static DEVICE_ATTR_RO(prox_trim);
+static DEVICE_ATTR_WO(prox_cal);
 static DEVICE_ATTR(modify_settings, 0664, proximity_modify_settings_show, proximity_modify_settings_store);
 static DEVICE_ATTR(settings_thd_high, 0664, proximity_settings_thresh_high_show, proximity_settings_thresh_high_store);
 static DEVICE_ATTR(settings_thd_low, 0664, proximity_settings_thresh_low_show, proximity_settings_thresh_low_store);
@@ -199,6 +214,7 @@ static struct device_attribute *proximity_gp2ap110s_attrs[] = {
 	&dev_attr_settings_thd_high,
 	&dev_attr_settings_thd_low,
 	&dev_attr_prox_trim,
+	&dev_attr_prox_cal,
 	NULL,
 };
 

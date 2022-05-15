@@ -136,6 +136,15 @@ static irqreturn_t sec_nfc_irq_thread_fn(int irq, void *dev_id)
 	}
 
 	info->i2c_info.read_irq += SEC_NFC_READ_TIMES;
+
+#ifdef CONFIG_SEC_NFC_DUPLICATED_IRQ_WQ
+	if (info->i2c_info.read_irq >= SEC_NFC_READ_TIMES * 2) {
+		NFC_LOG_ERR("AP called duplicated IRQ handler\n");
+		info->i2c_info.read_irq -= SEC_NFC_READ_TIMES;
+		mutex_unlock(&info->i2c_info.read_mutex);
+		return IRQ_HANDLED;
+	}
+#endif
 	mutex_unlock(&info->i2c_info.read_mutex);
 
 	wake_up_interruptible(&info->i2c_info.read_wait);
@@ -1355,7 +1364,6 @@ static int __sec_nfc_remove(struct device *dev)
 	return 0;
 }
 
-MODULE_DEVICE_TABLE(i2c, sec_nfc_id_table);
 #define SEC_NFC_INIT(driver)	i2c_add_driver(driver)
 #define SEC_NFC_EXIT(driver)	i2c_del_driver(driver)
 
@@ -1385,6 +1393,7 @@ static struct i2c_device_id sec_nfc_id_table[] = {
 	{ SEC_NFC_DRIVER_NAME, 0 },
 	{ }
 };
+MODULE_DEVICE_TABLE(i2c, sec_nfc_id_table);
 
 static const struct of_device_id nfc_match_table[] = {
 	{ .compatible = SEC_NFC_DRIVER_NAME,},
@@ -1405,6 +1414,26 @@ static struct i2c_driver sec_nfc_driver = {
 	},
 };
 
+#if IS_MODULE(CONFIG_SAMSUNG_NFC)
+extern int spip3_dev_init(void);
+extern void spip3_dev_exit(void);
+
+static int __init sec_nfc_init(void)
+{
+#if IS_ENABLED(CONFIG_ESE_P3_LSI)
+	ret = spip3_dev_init();
+#endif
+	return SEC_NFC_INIT(&sec_nfc_driver);
+}
+
+static void __exit sec_nfc_exit(void)
+{
+#if IS_ENABLED(CONFIG_ESE_P3_LSI)
+	spip3_dev_exit();
+#endif
+	SEC_NFC_EXIT(&sec_nfc_driver);
+}
+#else
 static int __init sec_nfc_init(void)
 {
 	return SEC_NFC_INIT(&sec_nfc_driver);
@@ -1414,6 +1443,7 @@ static void __exit sec_nfc_exit(void)
 {
 	SEC_NFC_EXIT(&sec_nfc_driver);
 }
+#endif
 
 module_init(sec_nfc_init);
 module_exit(sec_nfc_exit);

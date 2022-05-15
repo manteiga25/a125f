@@ -2774,6 +2774,12 @@ wlanoidSetAddKey(IN struct ADAPTER *prAdapter, IN void *pvSetBuffer,
 						prNewKey->ucBssIdx);
 					prAisSpecBssInfo->fgBipKeyInstalled =
 						TRUE;
+
+					DBGLOG(RSN, INFO,
+						"Change BIP BC keyId from %d to 3\n",
+						prCmdKey->ucKeyId);
+					/* Reserve keyid 3 for IGTK */
+					prCmdKey->ucKeyId = 3;
 				}
 			}
 #endif
@@ -3103,6 +3109,16 @@ uint32_t
 wlanoidSetRemoveKey(IN struct ADAPTER *prAdapter,
 		    IN void *pvSetBuffer, IN uint32_t u4SetBufferLen,
 		    OUT uint32_t *pu4SetInfoLen) {
+	DEBUGFUNC("wlanoidSetRemoveKey");
+
+	return wlanSetRemoveKey(prAdapter, pvSetBuffer, u4SetBufferLen,
+				pu4SetInfoLen, TRUE);
+}				/* wlanoidSetRemoveKey */
+
+uint32_t
+wlanSetRemoveKey(IN struct ADAPTER *prAdapter,
+		    IN void *pvSetBuffer, IN uint32_t u4SetBufferLen,
+		    OUT uint32_t *pu4SetInfoLen, IN uint8_t fgIsOid) {
 	struct GLUE_INFO *prGlueInfo;
 	struct CMD_INFO *prCmdInfo;
 	struct PARAM_REMOVE_KEY *prRemovedKey;
@@ -3117,7 +3133,7 @@ wlanoidSetRemoveKey(IN struct ADAPTER *prAdapter,
 	struct mt66xx_chip_info *prChipInfo;
 	uint16_t cmd_size;
 
-	DEBUGFUNC("wlanoidSetRemoveKey");
+	DEBUGFUNC("wlanSetRemoveKey");
 
 	ASSERT(prAdapter);
 	ASSERT(pu4SetInfoLen);
@@ -3181,6 +3197,9 @@ wlanoidSetRemoveKey(IN struct ADAPTER *prAdapter,
 			}
 			ASSERT(prBssInfo->wepkeyWlanIdx < WTBL_SIZE);
 			ucRemoveBCKeyAtIdx = prBssInfo->wepkeyWlanIdx;
+			secPrivacyFreeForEntry(prAdapter,
+					prBssInfo->wepkeyWlanIdx);
+			prBssInfo->wepkeyWlanIdx = WTBL_RESERVED_ENTRY;
 		} else {
 			DBGLOG(RSN, INFO, "Remove group key id = %d",
 			       u4KeyIndex);
@@ -3197,6 +3216,13 @@ wlanoidSetRemoveKey(IN struct ADAPTER *prAdapter,
 						u4KeyIndex] < WTBL_SIZE);
 				ucRemoveBCKeyAtIdx =
 					prBssInfo->ucBMCWlanIndexS[u4KeyIndex];
+
+				secPrivacyFreeForEntry(prAdapter,
+				    prBssInfo->ucBMCWlanIndexS[u4KeyIndex]);
+				prBssInfo->ucBMCWlanIndexSUsed[u4KeyIndex]
+					= FALSE;
+				prBssInfo->ucBMCWlanIndexS[u4KeyIndex]
+					= WTBL_RESERVED_ENTRY;
 			}
 		}
 
@@ -3229,7 +3255,7 @@ wlanoidSetRemoveKey(IN struct ADAPTER *prAdapter,
 	prCmdInfo->u2InfoBufLen = cmd_size;
 	prCmdInfo->pfCmdDoneHandler = nicCmdEventSetCommon;
 	prCmdInfo->pfCmdTimeoutHandler = nicOidCmdTimeoutCommon;
-	prCmdInfo->fgIsOid = TRUE;
+	prCmdInfo->fgIsOid = fgIsOid;
 	prCmdInfo->ucCID = CMD_ID_ADD_REMOVE_KEY;
 	prCmdInfo->fgSetQuery = TRUE;
 	prCmdInfo->fgNeedResp = FALSE;
@@ -3274,7 +3300,7 @@ wlanoidSetRemoveKey(IN struct ADAPTER *prAdapter,
 	GLUE_SET_EVENT(prGlueInfo);
 
 	return WLAN_STATUS_PENDING;
-}				/* wlanoidSetRemoveKey */
+}
 
 /*----------------------------------------------------------------------------*/
 /*!

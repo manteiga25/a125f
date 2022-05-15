@@ -277,7 +277,7 @@ void remove_proximity_sysfs(void)
 
 void initialize_proximity_factory(bool en)
 {
-	if (!get_sensor_probe_state(SENSOR_TYPE_PROXIMITY))
+	if (!get_sensor(SENSOR_TYPE_PROXIMITY))
 		return;
 
 	if (en)

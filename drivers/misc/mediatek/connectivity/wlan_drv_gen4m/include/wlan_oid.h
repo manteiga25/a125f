@@ -2807,6 +2807,11 @@ wlanoidSetAddKey(IN struct ADAPTER *prAdapter,
 		 OUT uint32_t *pu4SetInfoLen);
 
 uint32_t
+wlanSetRemoveKey(IN struct ADAPTER *prAdapter,
+		    IN void *pvSetBuffer, IN uint32_t u4SetBufferLen,
+		    OUT uint32_t *pu4SetInfoLen, IN uint8_t fgIsOid);
+
+uint32_t
 wlanoidSetRemoveKey(IN struct ADAPTER *prAdapter,
 		    IN void *pvSetBuffer,
 		    IN uint32_t u4SetBufferLen,

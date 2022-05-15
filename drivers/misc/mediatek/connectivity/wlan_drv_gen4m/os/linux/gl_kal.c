@@ -1403,13 +1403,15 @@ kalIndicateStatusAndComplete(IN struct GLUE_INFO
 			if (ucChannelNum <= 14) {
 				prChannel =
 					ieee80211_get_channel(
-						priv_to_wiphy(prGlueInfo),
+						prGlueInfo->prDevHandler
+						->ieee80211_ptr->wiphy,
 						ieee80211_channel_to_frequency
 						(ucChannelNum, KAL_BAND_2GHZ));
 			} else {
 				prChannel =
 					ieee80211_get_channel(
-						priv_to_wiphy(prGlueInfo),
+						prGlueInfo->prDevHandler
+						->ieee80211_ptr->wiphy,
 						ieee80211_channel_to_frequency
 						(ucChannelNum, KAL_BAND_5GHZ));
 			}
@@ -1422,13 +1424,17 @@ kalIndicateStatusAndComplete(IN struct GLUE_INFO
 			/* ensure BSS exists */
 #if KERNEL_VERSION(4, 1, 0) <= CFG80211_VERSION_CODE
 			bss = cfg80211_get_bss(
-				priv_to_wiphy(prGlueInfo), prChannel, arBssid,
+				prGlueInfo->prDevHandler
+				->ieee80211_ptr->wiphy,
+				prChannel, arBssid,
 				ssid.aucSsid, ssid.u4SsidLen,
 				IEEE80211_BSS_TYPE_ESS,
 				IEEE80211_PRIVACY_ANY);
 #else
 			bss = cfg80211_get_bss(
-				priv_to_wiphy(prGlueInfo), prChannel, arBssid,
+				prGlueInfo->prDevHandler
+				->ieee80211_ptr->wiphy,
+				prChannel, arBssid,
 				ssid.aucSsid, ssid.u4SsidLen,
 				WLAN_CAPABILITY_ESS,
 				WLAN_CAPABILITY_ESS);
@@ -1442,7 +1448,7 @@ kalIndicateStatusAndComplete(IN struct GLUE_INFO
 				if (prBssDesc != NULL && prChannel != NULL) {
 #if KERNEL_VERSION(3, 18, 0) <= CFG80211_VERSION_CODE
 					bss = cfg80211_inform_bss(
-			priv_to_wiphy(prGlueInfo),
+			prGlueInfo->prDevHandler->ieee80211_ptr->wiphy,
 			prChannel,
 			CFG80211_BSS_FTYPE_PRESP,
 			arBssid,
@@ -1455,7 +1461,7 @@ kalIndicateStatusAndComplete(IN struct GLUE_INFO
 			GFP_KERNEL);
 #else
 					bss = cfg80211_inform_bss(
-			priv_to_wiphy(prGlueInfo),
+			prGlueInfo->prDevHandler->ieee80211_ptr->wiphy,
 			prChannel,
 			arBssid,
 			0, /* TSF */
@@ -1480,14 +1486,16 @@ kalIndicateStatusAndComplete(IN struct GLUE_INFO
 			while (ucLoopCnt--) {
 #if KERNEL_VERSION(4, 1, 0) <= CFG80211_VERSION_CODE
 				bss_others = cfg80211_get_bss(
-						priv_to_wiphy(prGlueInfo),
+						prGlueInfo->prDevHandler
+						->ieee80211_ptr->wiphy,
 						NULL, arBssid, ssid.aucSsid,
 						ssid.u4SsidLen,
 						IEEE80211_BSS_TYPE_ESS,
 						IEEE80211_PRIVACY_ANY);
 #else
 				bss_others = cfg80211_get_bss(
-						priv_to_wiphy(prGlueInfo),
+						prGlueInfo->prDevHandler
+						->ieee80211_ptr->wiphy,
 						NULL, arBssid, ssid.aucSsid,
 						ssid.u4SsidLen,
 						WLAN_CAPABILITY_ESS,
@@ -1497,10 +1505,12 @@ kalIndicateStatusAndComplete(IN struct GLUE_INFO
 					DBGLOG(SCN, INFO,
 					       "remove BSSes that only channel different\n");
 					cfg80211_unlink_bss(
-						priv_to_wiphy(prGlueInfo),
+						prGlueInfo->prDevHandler
+						->ieee80211_ptr->wiphy,
 						bss_others);
 					cfg80211_put_bss(
-						priv_to_wiphy(prGlueInfo),
+						prGlueInfo->prDevHandler
+						->ieee80211_ptr->wiphy,
 						bss_others);
 				} else
 					break;
@@ -1889,6 +1899,45 @@ kalIndicateStatusAndComplete(IN struct GLUE_INFO
 			aisGetTargetBssDesc(prAdapter, ucBssIndex);
 		struct CONNECTION_SETTINGS *prConnSettings =
 			aisGetConnSettings(prAdapter, ucBssIndex);
+		struct GL_WPA_INFO *prWpaInfo =
+			aisGetWpaInfo(prAdapter, ucBssIndex);
+		struct BSS_INFO *prBssInfo =
+			aisGetAisBssInfo(prAdapter, ucBssIndex);
+
+		/* Make sure we remove all WEP key */
+		if (prWpaInfo && prWpaInfo->u4WpaVersion ==
+			IW_AUTH_WPA_VERSION_DISABLED
+			&& prBssInfo && prBssInfo->wepkeyWlanIdx < WTBL_SIZE) {
+			uint32_t keyId;
+			uint32_t u4SetLen;
+			struct PARAM_REMOVE_KEY rRemoveKey;
+
+			for (keyId = 0; keyId <= 3; keyId++) {
+				if (!prBssInfo->wepkeyUsed[keyId])
+					continue;
+
+				rRemoveKey.u4Length =
+					sizeof(struct PARAM_REMOVE_KEY);
+				rRemoveKey.u4KeyIndex = keyId;
+				rRemoveKey.ucBssIdx = ucBssIndex;
+				if (prBssDesc)
+					kalMemCopy(rRemoveKey.arBSSID,
+						prBssDesc->aucBSSID,
+						MAC_ADDR_LEN);
+				else
+					kalMemCopy(rRemoveKey.arBSSID,
+						prConnSettings->aucBSSIDHint,
+						MAC_ADDR_LEN);
+				DBGLOG(INIT, INFO,
+					"JOIN Failure: remove WEP wlanidx: %d, keyid: %d",
+					prBssInfo->wepkeyWlanIdx,
+					rRemoveKey.u4KeyIndex);
+				wlanSetRemoveKey(prAdapter,
+					(void *)&rRemoveKey,
+					sizeof(struct PARAM_REMOVE_KEY),
+					&u4SetLen, FALSE);
+			}
+		}
 
 		if (prBssDesc) {
 			DBGLOG(INIT, INFO, "JOIN Failure: u2JoinStatus=%d",
@@ -2341,11 +2390,7 @@ uint32_t kalResetStats(IN struct net_device *prDev)
 /*----------------------------------------------------------------------------*/
 void *kalGetStats(IN struct net_device *prDev)
 {
-	struct NETDEV_PRIVATE_GLUE_INFO *prNetDevPrivate;
-
-	prNetDevPrivate = (struct NETDEV_PRIVATE_GLUE_INFO *)
-			netdev_priv(prDev);
-	return (void *) &prNetDevPrivate->stats;
+	return (void *) &prDev->stats;
 }				/* end of wlanGetStats() */
 
 /*----------------------------------------------------------------------------*/
@@ -4000,6 +4045,24 @@ int hif_thread(void *data)
 				       &prGlueInfo->ulFlag))
 			prAdapter->fgWiFiInSleepyState = TRUE;
 
+		if (test_and_clear_bit(GLUE_FLAG_WLAN_RESUME,
+				       &prAdapter->ulSuspendFlag)) {
+			/* wlan resume */
+			DBGLOG(INIT, TRACE,
+				       "wlan resume here.\n");
+			halPdmaSlpprotOp(prGlueInfo, 0);
+			/* Add pdma sleep protection flow when resume.*/
+		}
+
+		if (test_and_clear_bit(GLUE_FLAG_WLAN_SUSPEND,
+		       &prAdapter->ulSuspendFlag)) {
+			/* wlan suspend */
+			DBGLOG(INIT, TRACE,
+				       "wlan suspend here.\n");
+			halPdmaSlpprotOp(prGlueInfo, 1);
+			/* Add pdma sleep protection flow when suspend.*/
+		}
+
 		kalDumpHifStats(prAdapter);
 
 		/* Release to FW own */
@@ -4991,7 +5054,7 @@ uint8_t kalUpdateBssTimestamp(IN struct GLUE_INFO *prGlueInfo)
 	uint64_t new_timestamp = kalGetBootTime();
 
 	ASSERT(prGlueInfo);
-	wiphy = priv_to_wiphy(prGlueInfo);
+	wiphy = prGlueInfo->prDevHandler->ieee80211_ptr->wiphy;
 	if (!wiphy) {
 		log_dbg(REQ, ERROR, "wiphy is null\n");
 		return 1;
@@ -5706,7 +5769,7 @@ kalIndicateBssInfo(IN struct GLUE_INFO *prGlueInfo,
 	struct ieee80211_channel *prChannel = NULL;
 
 	ASSERT(prGlueInfo);
-	wiphy = priv_to_wiphy(prGlueInfo);
+	wiphy = prGlueInfo->prDevHandler->ieee80211_ptr->wiphy;
 
 	/* search through channel entries */
 	if (ucChannelNum <= 14) {
@@ -5787,12 +5850,14 @@ kalReadyOnChannel(IN struct GLUE_INFO *prGlueInfo,
 
 		if (ucChannelNum <= 14) {
 			prChannel =
-				ieee80211_get_channel(priv_to_wiphy(prGlueInfo),
+				ieee80211_get_channel(prGlueInfo
+				->prDevHandler->ieee80211_ptr->wiphy,
 				ieee80211_channel_to_frequency(ucChannelNum,
 				KAL_BAND_2GHZ));
 		} else {
 			prChannel =
-				ieee80211_get_channel(priv_to_wiphy(prGlueInfo),
+				ieee80211_get_channel(prGlueInfo
+				->prDevHandler->ieee80211_ptr->wiphy,
 				ieee80211_channel_to_frequency(ucChannelNum,
 				KAL_BAND_5GHZ));
 		}
@@ -5858,12 +5923,14 @@ kalRemainOnChannelExpired(IN struct GLUE_INFO *prGlueInfo,
 
 		if (ucChannelNum <= 14) {
 			prChannel =
-				ieee80211_get_channel(priv_to_wiphy(prGlueInfo),
+				ieee80211_get_channel(prGlueInfo
+				->prDevHandler->ieee80211_ptr->wiphy,
 				ieee80211_channel_to_frequency(ucChannelNum,
 				KAL_BAND_2GHZ));
 		} else {
 			prChannel =
-				ieee80211_get_channel(priv_to_wiphy(prGlueInfo),
+				ieee80211_get_channel(prGlueInfo
+				->prDevHandler->ieee80211_ptr->wiphy,
 				ieee80211_channel_to_frequency(ucChannelNum,
 				KAL_BAND_5GHZ));
 		}
@@ -6094,9 +6161,11 @@ void kalSchedScanResults(IN struct GLUE_INFO *prGlueInfo)
 
 	scanlog_dbg(LOG_SCHED_SCAN_DONE_D2K, INFO, "Call cfg80211_sched_scan_results\n");
 #if KERNEL_VERSION(4, 12, 0) <= CFG80211_VERSION_CODE
-	cfg80211_sched_scan_results(priv_to_wiphy(prGlueInfo), 0);
+	cfg80211_sched_scan_results(
+		prGlueInfo->prDevHandler->ieee80211_ptr->wiphy, 0);
 #else
-	cfg80211_sched_scan_results(priv_to_wiphy(prGlueInfo));
+	cfg80211_sched_scan_results(
+		prGlueInfo->prDevHandler->ieee80211_ptr->wiphy);
 #endif
 }
 
@@ -6777,7 +6846,7 @@ u_int8_t kalIndicateDriverEvent(struct ADAPTER *prAdapter,
 	struct WIFI_VAR *prWifiVar = &prAdapter->rWifiVar;
 	char uevent[30];
 
-	wiphy = priv_to_wiphy(prAdapter->prGlueInfo);
+	wiphy = prAdapter->prGlueInfo->prDevHandler->ieee80211_ptr->wiphy;
 	wdev = (wlanGetNetDev(prAdapter->prGlueInfo,
 		ucBssIdx))->ieee80211_ptr;
 
@@ -6832,7 +6901,7 @@ int8_t kalBigDataPip(struct ADAPTER *prAdapter,
 	struct wireless_dev *wdev;
 	struct WIFI_VAR *prWifiVar = &prAdapter->rWifiVar;
 
-	wiphy = priv_to_wiphy(prAdapter->prGlueInfo);
+	wiphy = prAdapter->prGlueInfo->prDevHandler->ieee80211_ptr->wiphy;
 	wdev = ((prAdapter->prGlueInfo)->prDevHandler)->ieee80211_ptr;
 
 	if (!wiphy || !wdev || !prWifiVar || !payload)
@@ -6877,9 +6946,9 @@ u_int8_t kalIndicateAgpsNotify(struct ADAPTER *prAdapter,
 	struct GLUE_INFO *prGlueInfo = prAdapter->prGlueInfo;
 	struct sk_buff *skb = NULL;
 
-	skb = cfg80211_testmode_alloc_event_skb(priv_to_wiphy(
-			prGlueInfo),
-						dataLen, GFP_KERNEL);
+	skb = cfg80211_testmode_alloc_event_skb(
+		prGlueInfo->prDevHandler->ieee80211_ptr->wiphy,
+		dataLen, GFP_KERNEL);
 
 	/* DBGLOG(CCX, INFO, ("WLAN_STATUS_AGPS_NOTIFY, cmd=%d\n", cmd)); */
 	if (unlikely(nla_put(skb, MTK_ATTR_AGPS_CMD, sizeof(cmd),
@@ -8041,6 +8110,9 @@ void kalSetRpsMap(IN struct GLUE_INFO *glue, IN unsigned long value)
 	int32_t i = 0, j = 0;
 	struct net_device *dev = NULL;
 
+	if (!wlanIsDriverReady(glue))
+		return;
+
 	for (i = 0; i < BSS_DEFAULT_NUM; i++) {
 		dev = wlanGetNetDev(glue, i);
 		if (dev) {
@@ -8084,6 +8156,11 @@ static int wlan_fb_notifier_callback(struct notifier_block
 
 	if (kalIsHalted()) {
 		kalHaltUnlock();
+		return 0;
+	}
+
+	if (!wlanIsDriverReady(prGlueInfo)) {
+		DBGLOG(REQ, WARN, "driver is not ready\n");
 		return 0;
 	}
 
@@ -8140,12 +8217,14 @@ void kalIndicateChannelSwitch(IN struct GLUE_INFO *prGlueInfo,
 
 	if (ucChannelNum <= 14) {
 		prChannel =
-		    ieee80211_get_channel(priv_to_wiphy(prGlueInfo),
+		    ieee80211_get_channel(
+		    prGlueInfo->prDevHandler->ieee80211_ptr->wiphy,
 			ieee80211_channel_to_frequency(ucChannelNum,
 			KAL_BAND_2GHZ));
 	} else {
 		prChannel =
-		    ieee80211_get_channel(priv_to_wiphy(prGlueInfo),
+		    ieee80211_get_channel(
+		    prGlueInfo->prDevHandler->ieee80211_ptr->wiphy,
 			ieee80211_channel_to_frequency(ucChannelNum,
 			KAL_BAND_5GHZ));
 	}
@@ -8515,14 +8594,14 @@ void kalRemoveBss(struct GLUE_INFO *prGlueInfo,
 
 	if (ucChannelNum <= 14) {
 		prChannel = ieee80211_get_channel(
-			priv_to_wiphy(prGlueInfo),
+			prGlueInfo->prDevHandler->ieee80211_ptr->wiphy,
 			ieee80211_channel_to_frequency(
 				ucChannelNum,
 				KAL_BAND_2GHZ)
 		);
 	} else {
 		prChannel = ieee80211_get_channel(
-			priv_to_wiphy(prGlueInfo),
+			prGlueInfo->prDevHandler->ieee80211_ptr->wiphy,
 			ieee80211_channel_to_frequency(
 				ucChannelNum,
 				KAL_BAND_5GHZ)
@@ -8530,7 +8609,7 @@ void kalRemoveBss(struct GLUE_INFO *prGlueInfo,
 	}
 
 #if (KERNEL_VERSION(4, 1, 0) <= CFG80211_VERSION_CODE)
-	bss = cfg80211_get_bss(priv_to_wiphy(prGlueInfo),
+	bss = cfg80211_get_bss(prGlueInfo->prDevHandler->ieee80211_ptr->wiphy,
 			prChannel, /* channel */
 			aucBSSID,
 			NULL, /* ssid */
@@ -8538,7 +8617,7 @@ void kalRemoveBss(struct GLUE_INFO *prGlueInfo,
 			IEEE80211_BSS_TYPE_ESS,
 			IEEE80211_PRIVACY_ANY);
 #else
-	bss = cfg80211_get_bss(priv_to_wiphy(prGlueInfo),
+	bss = cfg80211_get_bss(prGlueInfo->prDevHandler->ieee80211_ptr->wiphy,
 			prChannel, /* channel */
 			aucBSSID,
 			NULL, /* ssid */
@@ -8548,8 +8627,10 @@ void kalRemoveBss(struct GLUE_INFO *prGlueInfo,
 #endif
 
 	if (bss != NULL) {
-		cfg80211_unlink_bss(priv_to_wiphy(prGlueInfo), bss);
-		cfg80211_put_bss(priv_to_wiphy(prGlueInfo), bss);
+		cfg80211_unlink_bss(prGlueInfo->prDevHandler
+			->ieee80211_ptr->wiphy, bss);
+		cfg80211_put_bss(prGlueInfo->prDevHandler
+			->ieee80211_ptr->wiphy, bss);
 	}
 }
 

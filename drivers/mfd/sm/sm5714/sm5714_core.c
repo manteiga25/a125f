@@ -29,16 +29,16 @@
 #endif /* CONFIG_OF */
 
 static struct mfd_cell sm5714_devs[] = {
-#if defined(CONFIG_MUIC_SM5714)
+#if IS_ENABLED(CONFIG_MUIC_SM5714)
 	{ .name = "sm5714-muic", },
 #endif  /* CONFIG_MUIC_SM5714 */
-#if defined(CONFIG_FUELGAUGE_SM5714)
+#if IS_ENABLED(CONFIG_FUELGAUGE_SM5714)
 	{ .name = "sm5714-fuelgauge", },
 #endif  /* CONFIG_FUELGAUGE_SM5714 */
-#if defined(CONFIG_CHARGER_SM5714)
+#if IS_ENABLED(CONFIG_CHARGER_SM5714)
 	{ .name = "sm5714-charger", },
 #endif  /* CONFIG_CHARGER_SM5714 */
-#if defined(CONFIG_LEDS_SM5714)
+#if IS_ENABLED(CONFIG_LEDS_SM5714)
 	{ .name = "sm5714-fled", },
 #endif /* CONFIG_LEDS_SM5714 */
 };

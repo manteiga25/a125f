@@ -1350,6 +1350,11 @@ void p2pFuncStopGO(IN struct ADAPTER *prAdapter,
 		IN struct BSS_INFO *prP2pBssInfo)
 {
 	uint32_t u4ClientCount = 0;
+	struct P2P_ROLE_FSM_INFO *prP2pRoleFsmInfo;
+
+	prP2pRoleFsmInfo = P2P_ROLE_INDEX_2_ROLE_FSM_INFO(
+		prAdapter, prP2pBssInfo->u4PrivateData);
+	prP2pRoleFsmInfo->fgIsChannelSelectByAcs = FALSE;
 
 	do {
 		ASSERT_BREAK((prAdapter != NULL) && (prP2pBssInfo != NULL));
@@ -3204,7 +3209,9 @@ p2pFuncValidateAuth(IN struct ADAPTER *prAdapter,
 #if CFG_SUPPORT_802_11W
 		/* AP PMF. if PMF connection, do not reset state & FSM */
 		fgPmfConn = rsnCheckBipKeyInstalled(prAdapter, prStaRec);
-		if (fgPmfConn) {
+		if (fgPmfConn &&
+			prP2pBssInfo->u4RsnSelectedAKMSuite !=
+			RSN_AKM_SUITE_SAE) {
 			DBGLOG(P2P, WARN, "PMF Connction, return false\n");
 			return FALSE;
 		}

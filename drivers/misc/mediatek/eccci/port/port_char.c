@@ -190,6 +190,7 @@ static int port_char_recv_skb(struct port_t *port, struct sk_buff *skb)
 #ifdef CONFIG_MTK_SRIL_SUPPORT
 		port->rx_ch != CCCI_RIL_IPC0_RX &&
 		port->rx_ch != CCCI_RIL_IPC1_RX &&
+		port->rx_ch != CCCI_CIQ_RX &&
 #endif
 		!(port->rx_ch == CCCI_IPC_RX &&
 		port->minor ==

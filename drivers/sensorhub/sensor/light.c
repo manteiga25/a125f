@@ -277,21 +277,29 @@ void get_light_sensor_value(char *dataframe, int *index, struct sensor_event *ev
 	*index += sizeof(sensor_value->brightness);
 }
 
-void init_light(bool en)
+int init_light(bool en)
 {
 	struct shub_sensor *sensor = get_sensor(SENSOR_TYPE_LIGHT);
 
 	if (!sensor)
-		return;
+		return 0;
 
 	if (en) {
 		strcpy(sensor->name, "light_sensor");
 		sensor->receive_event_size = 28;
 		sensor->report_event_size = 4;
 		sensor->event_buffer.value = kzalloc(sizeof(struct light_event), GFP_KERNEL);
+		if (!sensor->event_buffer.value)
+			goto err_no_mem;
 
 		sensor->data = kzalloc(sizeof(struct light_data), GFP_KERNEL);
+		if (!sensor->data)
+			goto err_no_mem;
+
 		sensor->funcs = kzalloc(sizeof(struct sensor_funcs), GFP_KERNEL);
+		if (!sensor->funcs)
+			goto err_no_mem;
+
 		sensor->funcs->sync_status = sync_light_status;
 		sensor->funcs->enable = enable_light;
 		sensor->funcs->report_event = report_event_light;
@@ -303,12 +311,13 @@ void init_light(bool en)
 		struct light_data *data = get_sensor(SENSOR_TYPE_LIGHT)->data;
 
 #ifdef CONFIG_SHUB_PANEL
-		if (data->ddi_support)
+		if (sensor->data->ddi_support)
 			remove_shub_panel();
 #endif
 
 		kfree(data->light_coef);
 		data->light_coef = NULL;
+
 		kfree(sensor->data);
 		sensor->data = NULL;
 
@@ -318,6 +327,20 @@ void init_light(bool en)
 		kfree(sensor->event_buffer.value);
 		sensor->event_buffer.value = NULL;
 	}
+
+	return 0;
+
+err_no_mem:
+	kfree(sensor->event_buffer.value);
+	sensor->event_buffer.value = NULL;
+
+	kfree(sensor->data);
+	sensor->data = NULL;
+
+	kfree(sensor->funcs);
+	sensor->funcs = NULL;
+
+	return -ENOMEM;
 }
 
 void print_light_ir_debug(void)
@@ -330,20 +353,25 @@ void print_light_ir_debug(void)
 		  event->timestamp, sensor->sampling_period, sensor->max_report_latency);
 }
 
-void init_light_ir(bool en)
+int init_light_ir(bool en)
 {
 	struct shub_sensor *sensor = get_sensor(SENSOR_TYPE_LIGHT_IR);
 
 	if (!sensor)
-		return;
+		return 0;
 
 	if (en) {
 		strcpy(sensor->name, "light_ir_sensor");
 		sensor->receive_event_size = 16;
 		sensor->report_event_size = 16;
 		sensor->event_buffer.value = kzalloc(sizeof(struct light_ir_event), GFP_KERNEL);
+		if (!sensor->event_buffer.value)
+			goto err_no_mem;
 
 		sensor->funcs = kzalloc(sizeof(struct sensor_funcs), GFP_KERNEL);
+		if (!sensor->funcs)
+			goto err_no_mem;
+
 		sensor->funcs->print_debug = print_light_ir_debug;
 	} else {
 		kfree(sensor->funcs);
@@ -352,6 +380,17 @@ void init_light_ir(bool en)
 		kfree(sensor->event_buffer.value);
 		sensor->event_buffer.value = NULL;
 	}
+
+	return 0;
+
+err_no_mem:
+	kfree(sensor->event_buffer.value);
+	sensor->event_buffer.value = NULL;
+
+	kfree(sensor->funcs);
+	sensor->funcs = NULL;
+
+	return -ENOMEM;
 }
 
 void print_light_seamless_debug(void)
@@ -364,20 +403,25 @@ void print_light_seamless_debug(void)
 		  event->timestamp, sensor->sampling_period, sensor->max_report_latency);
 }
 
-void init_light_seamless(bool en)
+int init_light_seamless(bool en)
 {
 	struct shub_sensor *sensor = get_sensor(SENSOR_TYPE_LIGHT_SEAMLESS);
 
 	if (!sensor)
-		return;
+		return 0;
 
 	if (en) {
 		strcpy(sensor->name, "light_seamless");
 		sensor->receive_event_size = 4;
 		sensor->report_event_size = 4;
 		sensor->event_buffer.value = kzalloc(sizeof(struct light_seamless_event), GFP_KERNEL);
+		if (!sensor->event_buffer.value)
+			goto err_no_mem;
 
 		sensor->funcs = kzalloc(sizeof(struct sensor_funcs), GFP_KERNEL);
+		if (!sensor->funcs)
+			goto err_no_mem;
+
 		sensor->funcs->print_debug = print_light_ir_debug;
 	} else {
 		kfree(sensor->funcs);
@@ -386,4 +430,15 @@ void init_light_seamless(bool en)
 		kfree(sensor->event_buffer.value);
 		sensor->event_buffer.value = NULL;
 	}
+
+	return 0;
+
+err_no_mem:
+	kfree(sensor->event_buffer.value);
+	sensor->event_buffer.value = NULL;
+
+	kfree(sensor->funcs);
+	sensor->funcs = NULL;
+
+	return -ENOMEM;
 }

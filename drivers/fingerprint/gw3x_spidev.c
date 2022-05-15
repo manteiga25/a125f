@@ -2,6 +2,18 @@
 #include "gw3x_common.h"
 
 #ifndef ENABLE_SENSORS_FPRINT_SECURE
+void gw3x_spi_setup_conf(struct gf_device *gf_dev, u32 bits)
+{
+	gf_dev->spi->bits_per_word = 8;
+	if (gf_dev->prev_bits_per_word != gf_dev->spi->bits_per_word) {
+		if (spi_setup(gf_dev->spi))
+			pr_err("failed to setup spi conf\n");
+		pr_info("prev-bpw:%d, bpw:%d\n",
+				gf_dev->prev_bits_per_word, gf_dev->spi->bits_per_word);
+		gf_dev->prev_bits_per_word = gf_dev->spi->bits_per_word;
+	}
+}
+
 int gw3x_spi_read_bytes(struct gf_device *gf_dev, u16 addr,
 		u32 data_len, u8 *rx_buf)
 {

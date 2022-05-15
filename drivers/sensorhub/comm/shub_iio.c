@@ -203,11 +203,21 @@ int initialize_indio_dev(struct device *dev)
 
 void shub_report_sensordata(int type, u64 timestamp, char *data, int data_len)
 {
-	struct iio_dev* indio_dev = get_iio_device(type);
-	char buf[data_len + sizeof(timestamp)];
+	struct iio_dev *indio_dev = get_iio_device(type);
+	struct shub_sensor *sensor = get_sensor(type);
+	char *buf;
+
+	if (sensor && sensor->report_event_size == 0)
+		return;
 
 	if (!indio_dev || !data || data_len == 0) {
 		shub_errf("type(%d) indio_dev | data | data_len is wrong", type);
+		return;
+	}
+
+	buf = kzalloc(sensor->report_event_size + sizeof(timestamp), GFP_KERNEL);
+	if (!buf) {
+		shub_errf("fail to alloc memory");
 		return;
 	}
 
@@ -216,4 +226,6 @@ void shub_report_sensordata(int type, u64 timestamp, char *data, int data_len)
 	mutex_lock(&indio_dev->mlock);
 	iio_push_to_buffers(indio_dev, buf);
 	mutex_unlock(&indio_dev->mlock);
+
+	kfree(buf);
 }

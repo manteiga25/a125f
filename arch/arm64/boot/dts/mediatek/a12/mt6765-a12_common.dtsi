@@ -2,7 +2,6 @@
  * If these files should be changed, then please make a sync with MTK
 */
 
-#include "display_lcd_a12_common.dtsi"
 #include "mt6765_input_a12_common.dtsi"
 #include "mt6765_a12_grip_00.dtsi"
 

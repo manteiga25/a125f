@@ -15,6 +15,11 @@
 
 #include "imgsensor_hw.h"
 
+#define CHECK_CAM_VDDIO_CNT
+#ifdef CHECK_CAM_VDDIO_CNT
+static int cam_io_cnt;
+#endif
+
 enum IMGSENSOR_RETURN imgsensor_hw_release_all(struct IMGSENSOR_HW *phw)
 {
 	int i;
@@ -23,6 +28,11 @@ enum IMGSENSOR_RETURN imgsensor_hw_release_all(struct IMGSENSOR_HW *phw)
 		if (phw->pdev[i]->release != NULL)
 			(phw->pdev[i]->release)(phw->pdev[i]->pinstance);
 	}
+
+#ifdef CHECK_CAM_VDDIO_CNT
+	cam_io_cnt = 0;
+#endif
+	
 	return IMGSENSOR_RETURN_SUCCESS;
 }
 enum IMGSENSOR_RETURN imgsensor_hw_init(struct IMGSENSOR_HW *phw)
@@ -80,6 +90,11 @@ enum IMGSENSOR_RETURN imgsensor_hw_init(struct IMGSENSOR_HW *phw)
 			phw->enable_sensor_by_index[i] = NULL;
 		}
 	}
+
+#ifdef CHECK_CAM_VDDIO_CNT
+	cam_io_cnt = 0;
+#endif
+	
 	return IMGSENSOR_RETURN_SUCCESS;
 }
 
@@ -133,6 +148,10 @@ static enum IMGSENSOR_RETURN imgsensor_hw_power_sequence(
 				    ppwr_info->pin,
 				    ppwr_info->pin_state_on);
 
+#ifdef CHECK_CAM_VDDIO_CNT
+			if (ppwr_info->pin == IMGSENSOR_HW_PIN_DOVDD)
+				cam_io_cnt++;
+#endif
 			mdelay(ppwr_info->pin_on_delay);
 		}
 
@@ -149,6 +168,17 @@ static enum IMGSENSOR_RETURN imgsensor_hw_power_sequence(
 				pdev =
 				    phw->pdev[psensor_pwr->id[ppwr_info->pin]];
 				mdelay(ppwr_info->pin_on_delay);
+
+#ifdef CHECK_CAM_VDDIO_CNT
+				if (ppwr_info->pin == IMGSENSOR_HW_PIN_DOVDD)
+					cam_io_cnt--;
+
+				if (ppwr_info->pin == IMGSENSOR_HW_PIN_DOVDD &&
+					(cam_io_cnt > 0)) {
+					pr_info("VDDIO off skip\n");
+					continue;
+				}
+#endif
 
 				PK_INFO("[power off]sensor_idx = %d, pin=%d, pin_state_off=%d, hw_id =%d\n",
 						sensor_idx, ppwr_info->pin,

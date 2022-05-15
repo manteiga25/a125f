@@ -63,7 +63,7 @@ static const unsigned freqs[] = { 400000, 300000, 200000, 100000 };
  * performance cost, and for other reasons may not always be desired.
  * So we allow it it to be disabled.
  */
-bool use_spi_crc = 1;
+bool use_spi_crc = 0;
 module_param(use_spi_crc, bool, 0);
 
 static int mmc_schedule_delayed_work(struct delayed_work *work,
@@ -823,10 +823,9 @@ void mmc_wait_cmdq_done(struct mmc_request *mrq)
 						host->task_id_index);
 					pr_info("%s: cnt:%d,wait:%d,rdy:%d\n",
 						mmc_hostname(host),
-					mmc_hostname(host),
-					atomic_read(&host->areq_cnt),
-					atomic_read(&host->cq_wait_rdy),
-					atomic_read(&host->cq_rdy_cnt));
+						atomic_read(&host->areq_cnt),
+						atomic_read(&host->cq_wait_rdy),
+						atomic_read(&host->cq_rdy_cnt));
 					/* reset eMMC flow */
 					cmd->error = (unsigned int)-ETIMEDOUT;
 					cmd->retries = 0;
@@ -2594,9 +2593,6 @@ static inline void mmc_bus_put(struct mmc_host *host)
 int mmc_resume_bus(struct mmc_host *host)
 {
 	unsigned long flags;
-
-	if (!mmc_bus_needs_resume(host))
-		return -EINVAL;
 
 	pr_notice("%s: Starting deferred resume\n", mmc_hostname(host));
 

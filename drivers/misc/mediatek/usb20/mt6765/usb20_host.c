@@ -22,9 +22,13 @@
 #include "tcpm.h"
 #include <linux/workqueue.h>
 #include <linux/mutex.h>
+#include <linux/jiffies.h>
+
 static struct notifier_block otg_nb;
 static struct tcpc_device *otg_tcpc_dev;
 static struct delayed_work register_otg_work;
+static unsigned long swch_d_time, swch_h_time;
+
 static int otg_tcp_notifier_call(struct notifier_block *nb,
 		unsigned long event, void *data);
 #define TCPC_OTG_DEV_NAME "type_c_port0"
@@ -347,11 +351,22 @@ static int otg_tcp_notifier_call(struct notifier_block *nb,
 			noti->swap_state.new_role == PD_ROLE_UFP) {
 			DBG(0, "switch role to device\n");
 			mt_usb_host_disconnect(0);
+			swch_d_time = jiffies;
+			if (!time_after(swch_d_time, swch_h_time + HZ)) {
+				pr_info("%s delay for switch\n", __func__);
+				msleep(100);
+			}
+
 			mt_usb_connect();
 		} else if (is_peripheral_active(mtk_musb) &&
 			noti->swap_state.new_role == PD_ROLE_DFP) {
 			DBG(0, "switch role to host\n");
 			mt_usb_dev_disconnect();
+			swch_h_time = jiffies;
+			if (!time_after(swch_h_time, swch_d_time + HZ)) {
+				pr_info("%s delay for switch\n", __func__);
+				msleep(100);
+			}
 			mt_usb_host_connect(0);
 		}
 		break;

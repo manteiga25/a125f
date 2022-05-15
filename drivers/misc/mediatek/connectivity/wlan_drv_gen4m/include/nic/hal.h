@@ -1207,6 +1207,8 @@ void halTxReturnFreeResource_v1(IN struct ADAPTER *prAdapter,
 	IN uint16_t *au2TxDoneCnt);
 uint8_t halTxRingDataSelect(IN struct ADAPTER *prAdapter,
 	IN struct MSDU_INFO *prMsduInfo);
+void halPdmaSlpprotOp(IN struct GLUE_INFO *prGlueInfo,
+							IN uint8_t ucEnable);
 void halUpdateTxMaxQuota(IN struct ADAPTER *prAdapter);
 
 #if defined(_HIF_USB)

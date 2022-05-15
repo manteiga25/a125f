@@ -25,7 +25,7 @@
 #elif defined(CONFIG_TYPEC)
 #include <linux/usb/typec.h>
 #endif
-#if defined(CONFIG_IF_CB_MANAGER)
+#if IS_ENABLED(CONFIG_IF_CB_MANAGER)
 #include <linux/usb/typec/manager/if_cb_manager.h>
 #endif
 #include <linux/pm_wakeup.h>
@@ -101,7 +101,6 @@
 #define SM5714_ATTACH_SOURCE			0x01
 #define SM5714_ATTACH_SINK				(0x01 << SM5714_ATTACH_SOURCE)
 #define SM5714_ATTACH_AUDIO				0x03
-#define SM5714_ATTACH_AUDIO_CHARGE		(0x01 << 2)
 #define SM5714_ATTACH_TYPE				0x07
 #define SM5714_ADV_CURR					0x18
 #define SM5714_CABLE_FLIP				0x20
@@ -262,7 +261,7 @@ struct AP_REQ_GET_STATUS_Type {
 struct sm5714_phydrv_data {
 	struct device *dev;
 	struct i2c_client *i2c;
-#if defined(CONFIG_PDIC_NOTIFIER)
+#if IS_ENABLED(CONFIG_PDIC_NOTIFIER)
 	ppdic_data_t ppdic_data;
 	struct workqueue_struct *pdic_wq;
 #endif
@@ -276,6 +275,7 @@ struct sm5714_phydrv_data {
 	int power_role;
 	int data_role;
 	int vconn_source;
+	int scr_sel;
 	msg_header_type header;
 	data_obj_type obj[SM5714_MAX_NUM_MSG_OBJ];
 	u64 status_reg;
@@ -303,6 +303,7 @@ struct sm5714_phydrv_data {
 	int reset_done;
 	int pd_support;
 	int abnormal_dev_cnt;
+	int rp_currentlvl;
 	struct delayed_work role_swap_work;
 	struct delayed_work usb_external_notifier_register_work;
 	struct notifier_block usb_external_notifier_nb;
@@ -330,13 +331,13 @@ struct sm5714_phydrv_data {
 	int typec_try_state_change;
 	int pwr_opmode;
 #endif
-#if defined(CONFIG_VBUS_NOTIFIER)
+#if IS_ENABLED(CONFIG_VBUS_NOTIFIER)
 	struct delayed_work vbus_noti_work;
 #endif
 	struct delayed_work rx_buf_work;
 	struct delayed_work vbus_dischg_work;
 	struct delayed_work debug_work;
-#if defined(CONFIG_IF_CB_MANAGER)
+#if IS_ENABLED(CONFIG_IF_CB_MANAGER)
 	struct usbpd_dev	*usbpd_d;
 	struct if_cb_manager	*man;
 #endif
@@ -346,7 +347,9 @@ struct sm5714_phydrv_data {
 	int detach_done_wait;
 };
 
-#if defined(CONFIG_PDIC_NOTIFIER)
+extern struct sm5714_usbpd_data *g_pd_data;
+
+#if IS_ENABLED(CONFIG_PDIC_NOTIFIER)
 extern void sm5714_protocol_layer_reset(void *_data);
 extern void sm5714_cc_state_hold_on_off(void *_data, int onoff);
 extern bool sm5714_check_vbus_state(void *_data);

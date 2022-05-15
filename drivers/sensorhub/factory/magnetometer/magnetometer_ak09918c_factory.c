@@ -101,7 +101,7 @@ static ssize_t matrix_store(struct device *dev, struct device_attribute *attr, c
 		  data->mag_matrix[24], data->mag_matrix[25], data->mag_matrix[26]);
 	set_mag_matrix(data);
 
-	return ret;
+	return size;
 }
 
 static ssize_t selftest_show(struct device *dev, struct device_attribute *attr, char *buf)

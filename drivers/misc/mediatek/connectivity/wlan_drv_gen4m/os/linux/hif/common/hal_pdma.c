@@ -152,6 +152,25 @@ uint8_t halTxRingDataSelect(IN struct ADAPTER *prAdapter,
 	return halRingDataSelectByWmmIndex(prAdapter, prMsduInfo->ucWmmQueSet);
 }
 
+void halPdmaSlpprotOp(IN struct GLUE_INFO *prGlueInfo,
+							IN uint8_t ucEnable)
+{
+	uint32_t u4Val = 0;
+
+	kalDevRegRead(prGlueInfo, CONN_HIF_PDMA_CSR_PDMA_SLP_PROT_ADDR, &u4Val);
+	DBGLOG(INIT, TRACE,
+		"CONN_HIF_PDMA_CSR_PDMA_SLP_PROT_ADDR read(0x%x)\n", u4Val);
+	if (ucEnable == 1)
+		u4Val |=
+		CONN_HIF_PDMA_CSR_PDMA_SLP_PROT_PDMA_AXI_SLPPROT_ENABLE_MASK;
+	else
+		u4Val &=
+		~CONN_HIF_PDMA_CSR_PDMA_SLP_PROT_PDMA_AXI_SLPPROT_ENABLE_MASK;
+	DBGLOG(INIT, TRACE,
+		"CONN_HIF_PDMA_CSR_PDMA_SLP_PROT_ADDR write(0x%x)\n", u4Val);
+	kalDevRegWrite(prGlueInfo, CONN_HIF_PDMA_CSR_PDMA_SLP_PROT_ADDR, u4Val);
+}
+
 
 /*----------------------------------------------------------------------------*/
 /*!

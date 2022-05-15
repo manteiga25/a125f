@@ -5052,7 +5052,7 @@ void nicEventRssiMonitor(IN struct ADAPTER *prAdapter,
 	struct net_device *dev;
 
 	prGlueInfo = prAdapter->prGlueInfo;
-	wiphy = priv_to_wiphy(prGlueInfo);
+	wiphy = prGlueInfo->prDevHandler->ieee80211_ptr->wiphy;
 
 	kalMemCopy(&rssi, prEvent->aucBuffer, sizeof(int32_t));
 	DBGLOG(RX, TRACE, "EVENT_ID_RSSI_MONITOR value=%d\n", rssi);

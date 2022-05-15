@@ -1,4 +1,5 @@
 #include "../comm/shub_comm.h"
+#include "../debug/shub_debug.h"
 #include "../sensorhub/shub_device.h"
 #include "../sensormanager/shub_sensor.h"
 #include "../sensormanager/shub_sensor_manager.h"
@@ -86,6 +87,7 @@ static int open_mag_calibration_file(void)
 		memset(data->cal_data, 0, data->cal_data_len);
 	}
 
+	set_open_cal_result(SENSOR_TYPE_GEOMAGNETIC_FIELD, ret);
 	return ret;
 }
 
@@ -159,11 +161,17 @@ int init_magnetometer_chipset(char *name, char *vendor)
 		return -EINVAL;
 	}
 
-	if (data->cal_data_len)
+	if (data->cal_data_len) {
 		data->cal_data = kzalloc(data->cal_data_len, GFP_KERNEL);
+		if (!data->cal_data)
+			return -ENOMEM;
+	}
 
-	if (data->mag_matrix_len)
+	if (data->mag_matrix_len) {
 		data->mag_matrix = kzalloc(data->mag_matrix_len, GFP_KERNEL);
+		if (!data->mag_matrix)
+			return -ENOMEM;
+	}
 
 	parse_dt_magnetometer(get_shub_device());
 
@@ -206,12 +214,12 @@ static void print_magnetometer_debug(void)
 		  sensor->sampling_period, sensor->max_report_latency);
 }
 
-void init_magnetometer(bool en)
+int init_magnetometer(bool en)
 {
 	struct shub_sensor *sensor = get_sensor(SENSOR_TYPE_GEOMAGNETIC_FIELD);
 
 	if (!sensor)
-		return;
+		return 0;
 
 	if (en) {
 		strcpy(sensor->name, "geomagnetic_sensor");
@@ -219,9 +227,17 @@ void init_magnetometer(bool en)
 		sensor->receive_event_size = 7;
 		sensor->report_event_size = 7;
 		sensor->event_buffer.value = kzalloc(sizeof(struct mag_event), GFP_KERNEL);
+		if (!sensor->event_buffer.value)
+			goto err_no_mem;
 
 		sensor->data = kzalloc(sizeof(struct magnetometer_data), GFP_KERNEL);
+		if (!sensor->data)
+			goto err_no_mem;
+
 		sensor->funcs = kzalloc(sizeof(struct sensor_funcs), GFP_KERNEL);
+		if (!sensor->funcs)
+			goto err_no_mem;
+
 		sensor->funcs->sync_status = sync_magnetometer_status;
 		sensor->funcs->set_position = set_mag_position;
 		sensor->funcs->get_position = get_mag_position;
@@ -247,22 +263,47 @@ void init_magnetometer(bool en)
 		kfree(sensor->event_buffer.value);
 		sensor->event_buffer.value = NULL;
 	}
+
+	return 0;
+
+err_no_mem:
+	kfree(sensor->event_buffer.value);
+	sensor->event_buffer.value = NULL;
+
+	kfree(sensor->funcs);
+	sensor->funcs = NULL;
+
+	kfree(sensor->data);
+	sensor->data = NULL;
+
+	return -ENOMEM;
 }
 
-void init_magnetometer_power(bool en)
+int init_magnetometer_power(bool en)
 {
 	struct shub_sensor *sensor = get_sensor(SENSOR_TYPE_GEOMAGNETIC_POWER);
 
 	if (!sensor)
-		return;
+		return 0;
 
 	if (en) {
 		strcpy(sensor->name, "geomagnetic_power");
 		sensor->receive_event_size = 6;
 		sensor->report_event_size = 6;
 		sensor->event_buffer.value = kzalloc(sizeof(struct mag_event), GFP_KERNEL);
+		if (!sensor->event_buffer.value)
+			goto err_no_mem;
+
 	} else {
 		kfree(sensor->event_buffer.value);
 		sensor->event_buffer.value = NULL;
 	}
+
+	return 0;
+
+err_no_mem:
+	kfree(sensor->event_buffer.value);
+	sensor->event_buffer.value = NULL;
+
+	return -ENOMEM;
 }

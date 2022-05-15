@@ -1209,7 +1209,8 @@ void qmHandleRxDhcpPackets(struct ADAPTER *prAdapter,
 			   struct SW_RFB *prSwRfb);
 #endif
 
-#if defined(CFG_SUPPORT_REPLAY_DETECTION) || defined(CFG_SUPPORT_FRAG_AGG_ATTACK_DETECTION)
+#if defined(CFG_SUPPORT_REPLAY_DETECTION) || \
+	defined(CFG_SUPPORT_FRAG_AGG_ATTACK_DETECTION)
 #define CCMPTSCPNNUM	6
 u_int8_t qmRxPNtoU64(uint8_t *pucPN, uint8_t uPNNum,
 	uint64_t *pu64Rets);

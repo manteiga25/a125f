@@ -1630,6 +1630,7 @@ static void mmc_blk_data_prep(struct mmc_queue *mq, struct mmc_queue_req *mqrq,
 	struct mmc_blk_request *brq = &mqrq->brq;
 	struct request *req = mmc_queue_req_to_req(mqrq);
 	bool do_rel_wr, do_data_tag;
+	bool read_dir = (rq_data_dir(req) == READ);
 
 	/*
 	 * Reliable writes are used to implement Forced Unit Access and
@@ -1710,6 +1711,10 @@ static void mmc_blk_data_prep(struct mmc_queue *mq, struct mmc_queue_req *mqrq,
 						(rq_data_dir(req) == READ) ?
 						MMC_DATA_READ : MMC_DATA_WRITE,
 						brq->data.blocks);
+	}
+	if (mq->use_cqe) {
+		if (read_dir || req->cmd_flags & REQ_SYNC)
+			brq->data.flags |= MMC_DATA_PRIO;
 	}
 
 	if (do_rel_wr) {
@@ -2618,12 +2623,26 @@ int mmc_blk_end_queued_req(struct mmc_host *host,
 	req = mmc_queue_req_to_req(mq_rq);
 	mq = req->q->queuedata;
 
+	host->areq_que[index] = NULL;
+	/* make sure host->areq_que[index] clear earlier than atomic_set(&mq->mqrq[index].index
+	 * which maybe caused by cpu out of order execution or C compiler optimization.
+	 * Otherwise, there is a competition risk at  mmc_blk_swcq_issue_rw_rq :
+	 * "card->host->areq_que[atomic_read(&mqrq->index) - 1] = new_areq;"
+	 */
+	mb();
+
 	mmc_blk_mq_post_req(mq, req);
 
 	mq->mqrq[index].req = NULL;
-	host->areq_que[index] = NULL;
 
 	atomic_set(&mq->mqrq[index].index, 0);
+	/* make sure mq->mqrq[index].index clear earlier than atomic_dec(&host->areq_cnt)
+	 * which maybe caused by cpu out of order execution.
+	 * Otherwise, there is a competition risk at mmc_blk_swcq_issue_rw_rq :
+	 * "index = mmc_get_cmdq_index(mq);"
+	 * index may be equal to cmdq_depth
+	 */
+	mb();
 	atomic_dec(&host->areq_cnt);
 
 	if (atomic_read(&host->areq_cnt) == 0)
@@ -2655,9 +2674,14 @@ static int mmc_blk_swcq_issue_rw_rq(struct mmc_queue *mq,
 	struct mmc_async_req *new_areq = &mqrq->areq;
 	struct mmc_card *card = mq->card;
 
-	if (atomic_read(&host->areq_cnt) < card->ext_csd.cmdq_depth)
+	if (atomic_read(&host->areq_cnt) < card->ext_csd.cmdq_depth) {
 		index = mmc_get_cmdq_index(mq);
-	else
+		if (WARN_ON(index == card->ext_csd.cmdq_depth)) {
+			pr_info("%s,areq_cnt:%d\n",
+					__func__, atomic_read(&host->areq_cnt));
+			return -EBUSY;
+		}
+	} else
 		return -EBUSY;
 
 	if (req) {

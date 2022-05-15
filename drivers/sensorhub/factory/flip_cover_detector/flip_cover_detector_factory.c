@@ -49,28 +49,22 @@ struct factory_cover_status_data {
 static struct device *fcd_sysfs_device;
 static struct factory_cover_status_data *factory_data;
 
+static char sysfs_cover_status[10];
+
 static ssize_t nfc_cover_status_show(struct device *dev,
 				    struct device_attribute *attr, char *buf)
 {
 	struct flip_cover_detector_data *data = get_sensor(SENSOR_TYPE_FLIP_COVER_DETECTOR)->data;
-	char status[10];
-	static int status_flag = -1;
 
 	if (data->nfc_cover_status == COVER_ATTACH || data->nfc_cover_status == COVER_ATTACH_NFC_ACTIVE) {
-		snprintf(status, 10, "CLOSE");
-		if (status_flag != data->nfc_cover_status) {
-			status_flag = data->nfc_cover_status;
-			shub_infof("[FACTORY] nfc_cover_status=%s(ATTACH)", status);
-		}
-	} else {
-		snprintf(status, 10, "OPEN");
-		if (status_flag != data->nfc_cover_status) {
-			status_flag = data->nfc_cover_status;
-			shub_infof("[FACTORY] nfc_cover_status=%s(DETACH)", status);
-		}
+		snprintf(sysfs_cover_status, 10, "CLOSE");
+	} else if (data->nfc_cover_status == COVER_DETACH){
+		snprintf(sysfs_cover_status, 10, "OPEN");
 	}
 
-	return snprintf(buf, PAGE_SIZE, "%s\n",	status);
+	shub_infof("[FACTORY] nfc_cover_status=%s", sysfs_cover_status);
+
+	return snprintf(buf, PAGE_SIZE, "%s\n",	sysfs_cover_status);
 }
 
 static ssize_t nfc_cover_status_store(struct device *dev,
@@ -390,6 +384,8 @@ static void initialize_fcd_factorytest(void)
 
 	sensor_device_create(&fcd_sysfs_device, NULL, "flip_cover_detector_sensor");
 	add_sensor_device_attr(fcd_sysfs_device, fcd_attrs);
+
+	snprintf(sysfs_cover_status, 10, "OPEN");
 }
 
 static void remove_fcd_factorytest(void)
@@ -407,7 +403,7 @@ static void remove_fcd_factorytest(void)
 
 void initialize_flip_cover_detector_factory(bool en)
 {
-	if (!get_sensor_probe_state(SENSOR_TYPE_FLIP_COVER_DETECTOR))
+	if (!get_sensor(SENSOR_TYPE_FLIP_COVER_DETECTOR))
 		return;
 
 	if (en)

@@ -12,6 +12,7 @@
  */
 
 #include <linux/gpio.h>
+#include <linux/version.h>
 #include <linux/of_gpio.h>
 #include <linux/i2c.h>
 #include <linux/interrupt.h>
@@ -22,7 +23,11 @@
 #include <linux/pm_wakeup.h>
 #include <linux/switch.h>
 
-#if defined(CONFIG_BATTERY_SAMSUNG)
+#if IS_ENABLED(CONFIG_MUIC_NOTIFIER)
+#include <linux/muic/common/muic_notifier.h>
+#endif 
+
+#if IS_ENABLED(CONFIG_BATTERY_SAMSUNG)
 #include <linux/sec_batt.h>
 #endif
 #if defined(CONFIG_ARCH_QCOM)
@@ -31,17 +36,18 @@
 #include <linux/sec_ext.h>
 #endif
 
-#if defined(CONFIG_MUIC_NOTIFIER)
+#if IS_ENABLED(CONFIG_MUIC_NOTIFIER)
 #include <linux/muic/common/muic_notifier.h>
+#include <linux/muic/common/muic_param.h>
 #endif /* CONFIG_MUIC_NOTIFIER */
 
-#if defined(CONFIG_PDIC_NOTIFIER)
+#if IS_ENABLED(CONFIG_PDIC_NOTIFIER)
 #include <linux/usb/typec/common/pdic_notifier.h>
 #include <linux/usb_notify.h>
 #endif /* CONFIG_PDIC_NOTIFIER */
+#include <linux/usb/typec/common/pdic_param.h>
 
-
-#if defined(CONFIG_VBUS_NOTIFIER)
+#if IS_ENABLED(CONFIG_VBUS_NOTIFIER)
 #include <linux/vbus_notifier.h>
 #endif /* CONFIG_VBUS_NOTIFIER */
 
@@ -54,7 +60,7 @@
 #include <soc/samsung/exynos-modem-ctrl.h>
 #endif
 
-#if defined(CONFIG_BATTERY_SAMSUNG)
+#if IS_ENABLED(CONFIG_BATTERY_SAMSUNG)
 #include "../../../battery/common/sec_charging_common.h"
 #endif
 
@@ -369,7 +375,7 @@ static ssize_t sm5714_muic_show_adc(struct device *dev,
 	mutex_lock(&muic_data->muic_mutex);
 
 	if (muic_data->is_factory_start)
-#if defined(CONFIG_IF_CB_MANAGER)
+#if IS_ENABLED(CONFIG_IF_CB_MANAGER)
 		ret = usbpd_sbu_test_read(muic_data->man);
 #else
 		ret = 0;
@@ -627,7 +633,7 @@ static ssize_t sm5714_muic_set_afc_disable(struct device *dev,
 	struct muic_platform_data *pdata = muic_data->pdata;
 	int ret;
 	int param_val;
-#ifdef CONFIG_BATTERY_SAMSUNG
+#if IS_ENABLED(CONFIG_BATTERY_SAMSUNG)
 	union power_supply_propval psy_val;
 #endif
 
@@ -649,7 +655,7 @@ static ssize_t sm5714_muic_set_afc_disable(struct device *dev,
 		pr_err("[%s:%s] set_param failed(%d)\n", MUIC_DEV_NAME,
 				__func__, ret);
 
-#ifdef CONFIG_BATTERY_SAMSUNG
+#if IS_ENABLED(CONFIG_BATTERY_SAMSUNG)
 	psy_val.intval = param_val;
 	psy_do_property("battery", set, POWER_SUPPLY_EXT_PROP_HV_DISABLE, psy_val);
 #endif
@@ -1116,7 +1122,7 @@ int sm5714_muic_get_jig_status(void)
 }
 EXPORT_SYMBOL(sm5714_muic_get_jig_status);
 
-#if defined(CONFIG_IF_CB_MANAGER)
+#if IS_ENABLED(CONFIG_IF_CB_MANAGER)
 static int sm5714_muic_if_check_usb_killer(void *data)
 {
 	pr_info("[%s:%s] Do nothing\n", MUIC_DEV_NAME, __func__);
@@ -1139,7 +1145,7 @@ static void sm5714_muic_set_bypass(void *data, int enable)
 }
 #endif
 
-#if defined(CONFIG_IF_CB_MANAGER)
+#if IS_ENABLED(CONFIG_IF_CB_MANAGER)
 struct muic_ops ops_muic = {
 	.muic_check_usb_killer = sm5714_muic_if_check_usb_killer,
 	.muic_set_bypass = sm5714_muic_set_bypass,
@@ -1264,7 +1270,7 @@ static void sm5714_muic_handle_logically_detach(
 	sm5714_muic_set_factory_mode(muic_data, muic_data->attached_dev,
 				MUIC_INTR_DETACH);
 
-#if defined(CONFIG_MUIC_NOTIFIER)
+#if IS_ENABLED(CONFIG_MUIC_NOTIFIER)
 	if (!muic_data->suspended)
 		muic_notifier_detach_attached_dev(muic_data->attached_dev);
 	else
@@ -1302,7 +1308,7 @@ static void sm5714_muic_handle_attach(struct sm5714_muic_data *muic_data,
 	case ATTACHED_DEV_USB_MUIC:
 	case ATTACHED_DEV_CDP_MUIC:
 		ret = com_to_usb(muic_data);
-#if defined(CONFIG_MUIC_SUPPORT_PDIC)
+#if IS_ENABLED(CONFIG_MUIC_SUPPORT_PDIC)
 		muic_data->need_to_path_open = true;
 #endif
 		break;
@@ -1312,7 +1318,7 @@ static void sm5714_muic_handle_attach(struct sm5714_muic_data *muic_data,
 					__func__);
 		else
 			ret = com_to_usb(muic_data);
-#if defined(CONFIG_MUIC_SUPPORT_PDIC)
+#if IS_ENABLED(CONFIG_MUIC_SUPPORT_PDIC)
 		muic_data->need_to_path_open = true;
 #endif
 		break;
@@ -1354,7 +1360,7 @@ static void sm5714_muic_handle_attach(struct sm5714_muic_data *muic_data,
 
 	muic_data->attached_dev = new_dev;
 
-#if defined(CONFIG_MUIC_NOTIFIER)
+#if IS_ENABLED(CONFIG_MUIC_NOTIFIER)
 	if (noti) {
 		if (!muic_data->suspended) {
 			if (new_dev == ATTACHED_DEV_TA_MUIC)
@@ -1384,7 +1390,7 @@ static void sm5714_muic_handle_detach(struct sm5714_muic_data *muic_data,
 {
 	int ret = 0;
 	bool noti = true;
-#if defined(CONFIG_MUIC_NOTIFIER)
+#if IS_ENABLED(CONFIG_MUIC_NOTIFIER)
 	muic_attached_dev_t attached_dev = muic_data->attached_dev;
 #endif
 
@@ -1406,7 +1412,7 @@ static void sm5714_muic_handle_detach(struct sm5714_muic_data *muic_data,
 	case ATTACHED_DEV_CDP_MUIC:
 	case ATTACHED_DEV_TIMEOUT_OPEN_MUIC:
 	case ATTACHED_DEV_OTG_MUIC:
-#if defined(CONFIG_MUIC_SUPPORT_PDIC)
+#if IS_ENABLED(CONFIG_MUIC_SUPPORT_PDIC)
 		if (muic_data->pdic_info_data.pdic_evt_attached ==
 				MUIC_PDIC_NOTI_DETACH) {
 			ret = com_to_open(muic_data);
@@ -1426,7 +1432,7 @@ static void sm5714_muic_handle_detach(struct sm5714_muic_data *muic_data,
 		break;
 	case ATTACHED_DEV_NONE_MUIC:
 	case ATTACHED_DEV_UNKNOWN_MUIC:
-#if defined(CONFIG_MUIC_SUPPORT_PDIC)
+#if IS_ENABLED(CONFIG_MUIC_SUPPORT_PDIC)
 		if (muic_data->need_to_path_open) {
 			ret = com_to_open(muic_data);
 			muic_data->need_to_path_open = false;
@@ -1476,7 +1482,8 @@ static void sm5714_muic_handle_detach(struct sm5714_muic_data *muic_data,
 			MUIC_INTR_DETACH);
 
 	muic_data->attached_dev = ATTACHED_DEV_NONE_MUIC;
-#if defined(CONFIG_MUIC_NOTIFIER)
+	muic_data->vbus_changed_9to5 = 0;
+#if IS_ENABLED(CONFIG_MUIC_NOTIFIER)
 	if (noti) {
 		if (!muic_data->suspended) {
 			muic_notifier_detach_attached_dev(attached_dev);
@@ -1517,7 +1524,7 @@ static void sm5714_muic_detect_dev(struct sm5714_muic_data *muic_data, int irq)
 			MUIC_DEV_NAME, __func__, dev1, dev2, ctrl,
 			manualsw, afcctrl, vbvolt);
 
-#if defined(CONFIG_MUIC_SUPPORT_PDIC)
+#if IS_ENABLED(CONFIG_MUIC_SUPPORT_PDIC)
 	if (muic_data->pdata->opmode == OPMODE_PDIC) {
 		switch (muic_data->pdic_info_data.pdic_evt_rid) {
 		case RID_000K:
@@ -1526,6 +1533,12 @@ static void sm5714_muic_detect_dev(struct sm5714_muic_data *muic_data, int irq)
 			pr_info("[%s:%s] USB_OTG\n", MUIC_DEV_NAME, __func__);
 			break;
 		case RID_255K:
+#if defined(CONFIG_SEC_FACTORY)
+			intr = MUIC_INTR_ATTACH;
+			new_dev = ATTACHED_DEV_JIG_USB_OFF_MUIC;
+			pr_info("[%s:%s] JIG_USB_OFF(255K)\n", MUIC_DEV_NAME,
+					__func__);
+#else
 			/*
 			 * Don't set device type
 			 * because 255K is used as Bypass mode
@@ -1533,6 +1546,7 @@ static void sm5714_muic_detect_dev(struct sm5714_muic_data *muic_data, int irq)
 			dev1 = dev2 = 0;
 			pr_info("[%s:%s] Bypass mode(255K)\n", MUIC_DEV_NAME,
 					__func__);
+#endif
 			break;
 		case RID_301K:
 			if (!(vbvolt))
@@ -1657,7 +1671,7 @@ static void sm5714_muic_detect_dev(struct sm5714_muic_data *muic_data, int irq)
 		}
 
 #if defined(CONFIG_MUIC_BCD_RESCAN)
-		if (muic_data->pdic_afc_state == SM5714_MUIC_AFC_NORMAL && muic_data->bc12_retry_count < 1) {
+		if (muic_data->pdic_afc_state == SM5714_MUIC_AFC_NORMAL && muic_data->bc12_retry_count < muic_data->bc1p2_retry_count_max) {
 			muic_data->bc12_retry_count++;
 			pr_info("[%s:%s] DCD_OUT_SDP (bc12_retry_count=%d)\n",
 					MUIC_DEV_NAME, __func__, muic_data->bc12_retry_count);
@@ -1788,7 +1802,7 @@ static irqreturn_t sm5714_muic_irq_thread(int irq, void *data)
 		pr_info("%s: afc_retry_work(INT1_DETACH) cancel\n", __func__);
 		cancel_delayed_work(&muic_data->afc_retry_work);
 		cancel_delayed_work(&muic_data->afc_torch_work);
-#if defined(CONFIG_MUIC_SUPPORT_PDIC)
+#if IS_ENABLED(CONFIG_MUIC_SUPPORT_PDIC)
 		cancel_delayed_work(&muic_data->pdic_afc_work);
 #endif
 		cancel_delayed_work(&muic_data->delayed_523Kto619K_work);
@@ -1866,7 +1880,7 @@ static void sm5714_muic_delayed_523Kto619K_work(struct work_struct *work)
 	mutex_unlock(&muic_data->muic_mutex);
 }
 
-#if defined(CONFIG_VBUS_NOTIFIER)
+#if IS_ENABLED(CONFIG_VBUS_NOTIFIER)
 static int sm5714_muic_handle_vbus_notification(struct notifier_block *nb,
 			unsigned long action, void *data)
 {
@@ -1904,7 +1918,7 @@ static int sm5714_muic_pdic_set_hiccup_mode(int val)
 	if (static_data == NULL)
 		return -ENODEV;
 
-	if (lpcharge)
+	if (is_lpcharge_pdic_param())
 		return 0;
 
 	pr_info("[%s:%s] val = %d\n", MUIC_DEV_NAME, __func__, val);
@@ -1921,7 +1935,7 @@ static int sm5714_muic_pdic_set_hiccup_mode(int val)
 
 static int sm5714_muic_hv_charger_init(void)
 {
-#if defined(CONFIG_VBUS_NOTIFIER)
+#if IS_ENABLED(CONFIG_VBUS_NOTIFIER)
 	struct sm5714_muic_data *muic_data = static_data;
 
 	/* enable hiccup mode after charger init*/
@@ -2121,6 +2135,24 @@ static void sm5714_muic_free_irqs(struct sm5714_muic_data *muic_data)
 
 }
 
+#if defined(CONFIG_MUIC_BCD_RESCAN)
+static void sm5714_set_bc1p2_retry_count(struct sm5714_muic_data *muic_data)
+{
+	struct device_node *np = NULL;
+	int count;
+
+	np = of_find_compatible_node(NULL, NULL, "siliconmitus,sm5714mfd");
+	
+	if (np && !of_property_read_u32(np, "sm5714,bc1p2_retry_count", &count))
+		muic_data->bc1p2_retry_count_max = count;
+	else
+		muic_data->bc1p2_retry_count_max = 1; /* default retry count */
+
+	pr_info("%s:%s BC1p2 Retry count: %d\n", MUIC_DEV_NAME,
+				__func__, muic_data->bc1p2_retry_count_max);
+}
+#endif
+
 #if defined(CONFIG_OF)
 static int of_sm5714_muic_dt(struct device *dev,
 		struct sm5714_muic_data *muic_data)
@@ -2157,7 +2189,7 @@ static int sm5714_muic_probe(struct platform_device *pdev)
 {
 	struct sm5714_dev *sm5714 = dev_get_drvdata(pdev->dev.parent);
 	struct sm5714_platform_data *mfd_pdata = dev_get_platdata(sm5714->dev);
-#if defined(CONFIG_IF_CB_MANAGER)
+#if IS_ENABLED(CONFIG_IF_CB_MANAGER)
 	struct muic_dev *muic_d;
 #endif
 	struct sm5714_muic_data *muic_data;
@@ -2183,7 +2215,7 @@ static int sm5714_muic_probe(struct platform_device *pdev)
 	muic_data->pdata = &muic_pdata;
 	muic_data->muic_data = muic_data;
 
-#if defined(CONFIG_IF_CB_MANAGER)
+#if IS_ENABLED(CONFIG_IF_CB_MANAGER)
 	muic_d = kzalloc(sizeof(struct muic_dev), GFP_KERNEL);
 	if (!muic_d) {
 		ret = -ENOMEM;
@@ -2194,7 +2226,7 @@ static int sm5714_muic_probe(struct platform_device *pdev)
 	muic_data->man = register_muic(muic_d);
 #endif
 
-#if defined(CONFIG_MUIC_SUPPORT_PDIC)
+#if IS_ENABLED(CONFIG_MUIC_SUPPORT_PDIC)
 	muic_data->pdata->opmode = get_pdic_info() & 0xF;
 	muic_data->pdic_afc_state = SM5714_MUIC_AFC_NORMAL;
 	muic_data->pdic_afc_state_count = 0;
@@ -2221,6 +2253,7 @@ static int sm5714_muic_probe(struct platform_device *pdev)
 
 #if defined(CONFIG_MUIC_BCD_RESCAN)
 	muic_data->bc12_retry_count = 0;
+	sm5714_set_bc1p2_retry_count(muic_data);
 #endif
 
 #if defined(CONFIG_OF)
@@ -2239,12 +2272,20 @@ static int sm5714_muic_probe(struct platform_device *pdev)
 	mutex_init(&muic_data->muic_mutex);
 	mutex_init(&muic_data->afc_mutex);
 
+#if LINUX_VERSION_CODE < KERNEL_VERSION(5, 4, 0)
 	muic_data->wake_lock = wakeup_source_create("muic_wake");
 	if (muic_data->wake_lock)
 		wakeup_source_add(muic_data->wake_lock);
+#else
+	muic_data->wake_lock = wakeup_source_register(NULL, "muic_wake");
+#endif
 
+#if IS_MODULE(CONFIG_MUIC_NOTIFIER)
+		ret = muic_data->pdata->init_gpio_cb(get_switch_sel());
+#else
 	if (muic_data->pdata->init_gpio_cb)
 		ret = muic_data->pdata->init_gpio_cb();
+#endif
 	if (ret) {
 		pr_err("[%s:%s] failed to init gpio(%d)\n",
 				MUIC_DEV_NAME, __func__, ret);
@@ -2311,13 +2352,13 @@ static int sm5714_muic_probe(struct platform_device *pdev)
 		goto fail_init_irq;
 	}
 
-#if defined(CONFIG_VBUS_NOTIFIER)
+#if IS_ENABLED(CONFIG_VBUS_NOTIFIER)
 	vbus_notifier_register(&muic_data->vbus_nb,
 			sm5714_muic_handle_vbus_notification,
 			VBUS_NOTIFY_DEV_MUIC);
 	muic_data->vbus_state = STATUS_VBUS_UNKNOWN;
 #endif
-#if defined(CONFIG_MUIC_SUPPORT_PDIC)
+#if IS_ENABLED(CONFIG_MUIC_SUPPORT_PDIC)
 	if (muic_data->pdata->opmode & OPMODE_PDIC)
 		sm5714_muic_register_pdic_notifier(muic_data);
 	else
@@ -2345,7 +2386,7 @@ fail:
 	mutex_destroy(&muic_data->afc_mutex);
 
 fail_init_gpio:
-#if defined(CONFIG_IF_CB_MANAGER)
+#if IS_ENABLED(CONFIG_IF_CB_MANAGER)
 	kfree(muic_d);
 #endif
 err_kfree1:
@@ -2367,13 +2408,13 @@ static int sm5714_muic_remove(struct platform_device *pdev)
 		cancel_delayed_work_sync(&muic_data->muic_debug_work);
 		disable_irq_wake(muic_data->i2c->irq);
 		sm5714_muic_free_irqs(muic_data);
-#if defined(CONFIG_VBUS_NOTIFIER)
+#if IS_ENABLED(CONFIG_VBUS_NOTIFIER)
 		vbus_notifier_unregister(&muic_data->vbus_nb);
 #endif
 		mutex_destroy(&muic_data->muic_mutex);
 		mutex_destroy(&muic_data->afc_mutex);
 		i2c_set_clientdata(muic_data->i2c, NULL);
-#if defined(CONFIG_IF_CB_MANAGER)
+#if IS_ENABLED(CONFIG_IF_CB_MANAGER)
 		kfree(muic_data->man->muic_d);
 #endif
 		kfree(muic_data);

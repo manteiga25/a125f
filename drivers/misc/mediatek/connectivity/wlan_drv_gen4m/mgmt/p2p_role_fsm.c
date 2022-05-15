@@ -264,6 +264,7 @@ uint8_t p2pRoleFsmInit(IN struct ADAPTER *prAdapter,
 			prP2pRoleFsmInfo,
 			P2P_ROLE_STATE_IDLE);
 
+		LINK_INITIALIZE(&prP2pBssInfo->rPmkidCache);
 	} while (FALSE);
 
 	if (prP2pBssInfo)
@@ -355,6 +356,7 @@ void p2pRoleFsmUninit(IN struct ADAPTER *prAdapter, IN uint8_t ucRoleIdx)
 			kalMemFree(prP2pRoleFsmInfo, VIR_MEM_TYPE,
 				sizeof(struct P2P_ROLE_FSM_INFO));
 
+		rsnFlushPmkid(prAdapter, prP2pBssInfo->ucBssIndex);
 	} while (FALSE);
 
 	return;
@@ -1522,6 +1524,8 @@ void p2pRoleFsmRunEventStopAP(IN struct ADAPTER *prAdapter,
 	p2pFuncSetDfsState(DFS_STATE_INACTIVE);
 	p2pFuncStopRdd(prAdapter, prP2pBssInfo->ucBssIndex);
 #endif
+
+	rsnFlushPmkid(prAdapter, prP2pBssInfo->ucBssIndex);
 
 	kalP2PResetBlackList(prAdapter->prGlueInfo,
 		prP2pStopApMsg->ucRoleIdx);
@@ -3998,6 +4002,7 @@ void p2pRoleFsmRunEventAcs(IN struct ADAPTER *prAdapter,
 	prMsgAcsRequest = (struct MSG_P2P_ACS_REQUEST *) prMsgHdr;
 	prP2pRoleFsmInfo = P2P_ROLE_INDEX_2_ROLE_FSM_INFO(prAdapter,
 			prMsgAcsRequest->ucRoleIdx);
+	prP2pRoleFsmInfo->fgIsChannelSelectByAcs = TRUE;
 	prAcsReqInfo = &prP2pRoleFsmInfo->rAcsReqInfo;
 
 	p2pRoleFsmAbortCurrentAcsReq(prAdapter, prMsgAcsRequest);

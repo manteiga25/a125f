@@ -781,8 +781,8 @@ void scanRemoveBssDescsByPolicy(IN struct ADAPTER *prAdapter,
 				struct BSS_INFO *prAisBssInfo =
 					aisGetAisBssInfo(prAdapter, i);
 
-				if (prAisBssInfo->eConnectionState !=
-					MEDIA_STATE_CONNECTED)
+				if (kalGetMediaStateIndicated(prAdapter->
+					prGlueInfo, i) != MEDIA_STATE_CONNECTED)
 					continue;
 
 				if ((!prBssDesc->fgIsHiddenSSID) &&
@@ -1319,7 +1319,7 @@ void scanUpdateSWIPSBcn(IN struct ADAPTER *prAdapter,
 		return;
 	}
 
-	wiphy = priv_to_wiphy(prAdapter->prGlueInfo);
+	wiphy = prAdapter->prGlueInfo->prDevHandler->ieee80211_ptr->wiphy;
 	wdev = wlanGetNetDev(prAdapter->prGlueInfo, ucBssIndex)->ieee80211_ptr;
 
 	bcnInfo = kalMemAlloc(size, VIR_MEM_TYPE);
@@ -1371,7 +1371,7 @@ void scanAbortBeaconRecv(IN struct ADAPTER *prAdapter, IN uint8_t ucBssIndex,
 		return;
 	}
 
-	wiphy = priv_to_wiphy(prAdapter->prGlueInfo);
+	wiphy = prAdapter->prGlueInfo->prDevHandler->ieee80211_ptr->wiphy;
 	wdev = wlanGetNetDev(prAdapter->prGlueInfo, ucBssIndex)->ieee80211_ptr;
 
 	bcnAbort = kalMemAlloc(size, VIR_MEM_TYPE);
@@ -1671,6 +1671,7 @@ struct BSS_DESC *scanAddToBssDesc(IN struct ADAPTER *prAdapter,
 
 		ASSERT(prSwRfb->prRxStatusGroup3);
 
+		prBssDesc->fgIsInBTO = FALSE;
 		if (prBssDesc->eBSSType != eBSSType) {
 			prBssDesc->eBSSType = eBSSType;
 		} else if (prSwRfb->ucChnlNum !=
@@ -1711,6 +1712,7 @@ struct BSS_DESC *scanAddToBssDesc(IN struct ADAPTER *prAdapter,
 			&& u8Timestamp < prBssDesc->u8TimeStamp.QuadPart
 			&& prBssDesc->fgIsConnecting == FALSE) {
 			u_int8_t fgIsConnected, fgIsConnecting;
+			struct AIS_BLACKLIST_ITEM *prBlack;
 
 			if (aisGetTargetBssDesc(prAdapter, AIS_DEFAULT_INDEX)
 				== prBssDesc) {
@@ -1729,6 +1731,7 @@ struct BSS_DESC *scanAddToBssDesc(IN struct ADAPTER *prAdapter,
 			 */
 			fgIsConnected = prBssDesc->fgIsConnected;
 			fgIsConnecting = prBssDesc->fgIsConnecting;
+			prBlack = prBssDesc->prBlack;
 
 			/* Connected BSS descriptor still be used by other
 			 * functions. Thus, we should re-initialize the BSS_DESC
@@ -1740,6 +1743,7 @@ struct BSS_DESC *scanAddToBssDesc(IN struct ADAPTER *prAdapter,
 			/* restore */
 			prBssDesc->fgIsConnected = fgIsConnected;
 			prBssDesc->fgIsConnecting = fgIsConnecting;
+			prBssDesc->prBlack = prBlack;
 		}
 	}
 

@@ -575,6 +575,12 @@ static u_int8_t scanSanityCheckBssDesc(struct ADAPTER *prAdapter,
 			return FALSE;
 		}
 	}
+	/* BTO case */
+	if (prBssDesc->fgIsInBTO) {
+		log_dbg(SCN, WARN, MACSTR " is in BTO.\n",
+			MAC2STR(prBssDesc->aucBSSID));
+		return FALSE;
+	}
 
 	/* roaming case */
 	if (target &&

@@ -20,6 +20,7 @@
 #include "../../sensormanager/shub_sensor_manager.h"
 #include "../../utility/shub_dev_core.h"
 #include "../../utility/shub_utility.h"
+#include "light_factory.h"
 
 #include <linux/device.h>
 #include <linux/of.h>
@@ -30,6 +31,7 @@
 /* factory Sysfs                                                         */
 /*************************************************************************/
 static struct device *light_sysfs_device;
+static struct device_attribute **chipset_attrs;
 static u32 light_position[6];
 
 static ssize_t name_show(struct device *dev, struct device_attribute *attr, char *buf)
@@ -244,47 +246,6 @@ retry:
 			copr[10], copr[11]);
 }
 
-struct light_debug_info {
-	uint32_t stdev;
-	uint32_t moving_stdev;
-	uint32_t mode;
-	uint32_t brightness;
-	uint32_t min_div_max;
-	uint32_t lux;
-} __attribute__((__packed__));
-
-static ssize_t debug_info_show(struct device *dev, struct device_attribute *attr, char *buf)
-{
-	int ret = 0;
-	char *buffer = NULL;
-	int buffer_len = 0;
-	struct light_debug_info debug_info;
-
-	ret = shub_send_command_wait(CMD_GETVALUE, SENSOR_TYPE_LIGHT, DEBUG_INFO, 1000, NULL, 0, &buffer, &buffer_len,
-				     false);
-
-	if (ret < 0) {
-		shub_errf("shub_send_command_wait fail %d", ret);
-		return ret;
-	}
-
-	if (buffer == NULL) {
-		shub_errf("buffer is null");
-		return -EINVAL;
-	}
-
-	if (buffer_len != sizeof(debug_info)) {
-		shub_errf("buffer length error %d", buffer_len);
-		kfree(buffer);
-		return -EINVAL;
-	}
-
-	memcpy(&debug_info, buffer, sizeof(debug_info));
-
-	return snprintf(buf, PAGE_SIZE, "%u, %u, %u, %u, %u, %u\n", debug_info.stdev, debug_info.moving_stdev,
-			debug_info.mode, debug_info.brightness, debug_info.min_div_max, debug_info.lux);
-}
-
 static DEVICE_ATTR_RO(name);
 static DEVICE_ATTR_RO(vendor);
 static DEVICE_ATTR_RO(lux);
@@ -295,7 +256,6 @@ static DEVICE_ATTR(hall_ic, 0220, NULL, hall_ic_store);
 static DEVICE_ATTR_RO(sensorhub_ddi_spi_check);
 static DEVICE_ATTR_RO(test_copr);
 static DEVICE_ATTR_RO(copr_roix);
-static DEVICE_ATTR_RO(debug_info);
 
 static struct device_attribute *light_attrs[] = {
 	&dev_attr_name,
@@ -303,13 +263,17 @@ static struct device_attribute *light_attrs[] = {
 	&dev_attr_lux,
 	&dev_attr_raw_data,
 	&dev_attr_hall_ic,
-	&dev_attr_debug_info,
 	NULL,
 	NULL,
 	NULL,
 	NULL,
 	NULL,
 	NULL,
+};
+
+typedef struct device_attribute **(*get_chipset_dev_attrs)(char *);
+get_chipset_dev_attrs get_light_chipset_dev_attrs[] = {
+	get_light_tcs3701_dev_attrs,
 };
 
 static void check_light_dev_attr(void)
@@ -341,7 +305,7 @@ static void check_light_dev_attr(void)
 
 void initialize_light_sysfs(void)
 {
-	int ret;
+	int ret, i;
 	struct shub_sensor *sensor = get_sensor(SENSOR_TYPE_LIGHT);
 
 	ret = sensor_device_create(&light_sysfs_device, NULL, "light_sensor");
@@ -357,10 +321,24 @@ void initialize_light_sysfs(void)
 		shub_errf("fail to add %s sysfs device attr", sensor->name);
 		return;
 	}
+
+	for (i = 0; i < ARRAY_SIZE(get_light_chipset_dev_attrs); i++) {
+		chipset_attrs = get_light_chipset_dev_attrs[i](sensor->chipset_name);
+		if (chipset_attrs) {
+			ret = add_sensor_device_attr(light_sysfs_device, chipset_attrs);
+			if (ret < 0) {
+				shub_errf("fail to add sysfs chipset device attr(%d)", i);
+				return;
+			}
+			break;
+		}
+	}
 }
 
 void remove_light_sysfs(void)
 {
+	if (chipset_attrs)
+		remove_sensor_device_attr(light_sysfs_device, chipset_attrs);
 	remove_sensor_device_attr(light_sysfs_device, light_attrs);
 	sensor_device_destroy(light_sysfs_device);
 	light_sysfs_device = NULL;
@@ -368,7 +346,7 @@ void remove_light_sysfs(void)
 
 void initialize_light_factory(bool en)
 {
-	if (!get_sensor_probe_state(SENSOR_TYPE_LIGHT))
+	if (!get_sensor(SENSOR_TYPE_LIGHT))
 		return;
 	if (en)
 		initialize_light_sysfs();

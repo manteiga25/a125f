@@ -25,7 +25,7 @@ static u8 LM36274_INIT[] = {
 	TYPE_WRITE, 0x0E, 0x26,
 	TYPE_WRITE, 0x09, 0xBE,
 	TYPE_WRITE, 0x02, 0x6B,
-	TYPE_WRITE, 0x03, 0x0D,
+	TYPE_WRITE, 0x03, 0x27,
 	TYPE_WRITE, 0x11, 0x74,
 	TYPE_WRITE, 0x04, 0x05,
 	TYPE_WRITE, 0x05, 0xCC,
@@ -111,1065 +111,1070 @@ static unsigned char SEQ_NT36525B_011[] = {
 };
 
 static unsigned char SEQ_NT36525B_012[] = {
+	0x2F,
+	0x82,
+};
+
+static unsigned char SEQ_NT36525B_013[] = {
 	0x69,
 	0xA9,
 };
 
-static unsigned char SEQ_NT36525B_013[] = {
+static unsigned char SEQ_NT36525B_014[] = {
 	0x94,
 	0x00,
 };
 
-static unsigned char SEQ_NT36525B_014[] = {
+static unsigned char SEQ_NT36525B_015[] = {
 	0x95,
 	0xEB,
 };
 
-static unsigned char SEQ_NT36525B_015[] = {
+static unsigned char SEQ_NT36525B_016[] = {
 	0x96,
 	0xEB,
 };
 
-static unsigned char SEQ_NT36525B_016[] = {
+static unsigned char SEQ_NT36525B_017[] = {
 	0xFF,
 	0x24,
 };
 
-static unsigned char SEQ_NT36525B_017[] = {
+static unsigned char SEQ_NT36525B_018[] = {
 	0xFB,
 	0x01,
 };
 
-static unsigned char SEQ_NT36525B_018[] = {
+static unsigned char SEQ_NT36525B_019[] = {
 	0x00,
 	0x1E,
 };
 
-static unsigned char SEQ_NT36525B_019[] = {
+static unsigned char SEQ_NT36525B_020[] = {
 	0x04,
 	0x21,
 };
 
-static unsigned char SEQ_NT36525B_020[] = {
+static unsigned char SEQ_NT36525B_021[] = {
 	0x06,
 	0x22,
 };
 
-static unsigned char SEQ_NT36525B_021[] = {
+static unsigned char SEQ_NT36525B_022[] = {
 	0x07,
 	0x20,
 };
 
-static unsigned char SEQ_NT36525B_022[] = {
+static unsigned char SEQ_NT36525B_023[] = {
 	0x08,
 	0x1D,
 };
 
-static unsigned char SEQ_NT36525B_023[] = {
+static unsigned char SEQ_NT36525B_024[] = {
 	0x0A,
 	0x0C,
 };
 
-static unsigned char SEQ_NT36525B_024[] = {
+static unsigned char SEQ_NT36525B_025[] = {
 	0x0B,
 	0x0D,
 };
 
-static unsigned char SEQ_NT36525B_025[] = {
+static unsigned char SEQ_NT36525B_026[] = {
 	0x0C,
 	0x0E,
 };
 
-static unsigned char SEQ_NT36525B_026[] = {
+static unsigned char SEQ_NT36525B_027[] = {
 	0x0D,
 	0x0F,
 };
 
-static unsigned char SEQ_NT36525B_027[] = {
+static unsigned char SEQ_NT36525B_028[] = {
 	0x0F,
 	0x04,
 };
 
-static unsigned char SEQ_NT36525B_028[] = {
+static unsigned char SEQ_NT36525B_029[] = {
 	0x10,
 	0x05,
 };
 
-static unsigned char SEQ_NT36525B_029[] = {
-	0x12,
-	0x1E,
-};
-
 static unsigned char SEQ_NT36525B_030[] = {
-	0x13,
+	0x12,
 	0x1E,
 };
 
 static unsigned char SEQ_NT36525B_031[] = {
-	0x14,
+	0x13,
 	0x1E,
 };
 
 static unsigned char SEQ_NT36525B_032[] = {
-	0x16,
+	0x14,
 	0x1E,
 };
 
 static unsigned char SEQ_NT36525B_033[] = {
+	0x16,
+	0x1E,
+};
+
+static unsigned char SEQ_NT36525B_034[] = {
 	0x1A,
 	0x21,
 };
 
-static unsigned char SEQ_NT36525B_034[] = {
+static unsigned char SEQ_NT36525B_035[] = {
 	0x1C,
 	0x22,
 };
 
-static unsigned char SEQ_NT36525B_035[] = {
+static unsigned char SEQ_NT36525B_036[] = {
 	0x1D,
 	0x20,
 };
 
-static unsigned char SEQ_NT36525B_036[] = {
+static unsigned char SEQ_NT36525B_037[] = {
 	0x1E,
 	0x1D,
 };
 
-static unsigned char SEQ_NT36525B_037[] = {
+static unsigned char SEQ_NT36525B_038[] = {
 	0x20,
 	0x0C,
 };
 
-static unsigned char SEQ_NT36525B_038[] = {
+static unsigned char SEQ_NT36525B_039[] = {
 	0x21,
 	0x0D,
 };
 
-static unsigned char SEQ_NT36525B_039[] = {
+static unsigned char SEQ_NT36525B_040[] = {
 	0x22,
 	0x0E,
 };
 
-static unsigned char SEQ_NT36525B_040[] = {
+static unsigned char SEQ_NT36525B_041[] = {
 	0x23,
 	0x0F,
 };
 
-static unsigned char SEQ_NT36525B_041[] = {
+static unsigned char SEQ_NT36525B_042[] = {
 	0x25,
 	0x04,
 };
 
-static unsigned char SEQ_NT36525B_042[] = {
+static unsigned char SEQ_NT36525B_043[] = {
 	0x26,
 	0x05,
 };
 
-static unsigned char SEQ_NT36525B_043[] = {
-	0x28,
-	0x1E,
-};
-
 static unsigned char SEQ_NT36525B_044[] = {
-	0x29,
+	0x28,
 	0x1E,
 };
 
 static unsigned char SEQ_NT36525B_045[] = {
-	0x2A,
+	0x29,
 	0x1E,
 };
 
 static unsigned char SEQ_NT36525B_046[] = {
+	0x2A,
+	0x1E,
+};
+
+static unsigned char SEQ_NT36525B_047[] = {
 	0x2F,
 	0x0C,
 };
 
-static unsigned char SEQ_NT36525B_047[] = {
-	0x30,
-	0x0A,
-};
-
 static unsigned char SEQ_NT36525B_048[] = {
-	0x33,
+	0x30,
 	0x0A,
 };
 
 static unsigned char SEQ_NT36525B_049[] = {
+	0x33,
+	0x0A,
+};
+
+static unsigned char SEQ_NT36525B_050[] = {
 	0x34,
 	0x0C,
 };
 
-static unsigned char SEQ_NT36525B_050[] = {
+static unsigned char SEQ_NT36525B_051[] = {
 	0x37,
 	0x66,
 };
 
-static unsigned char SEQ_NT36525B_051[] = {
+static unsigned char SEQ_NT36525B_052[] = {
 	0x39,
 	0x00,
 };
 
-static unsigned char SEQ_NT36525B_052[] = {
+static unsigned char SEQ_NT36525B_053[] = {
 	0x3A,
 	0x10,
 };
 
-static unsigned char SEQ_NT36525B_053[] = {
+static unsigned char SEQ_NT36525B_054[] = {
 	0x3B,
 	0x90,
 };
 
-static unsigned char SEQ_NT36525B_054[] = {
+static unsigned char SEQ_NT36525B_055[] = {
 	0x3D,
 	0x92,
 };
 
-static unsigned char SEQ_NT36525B_055[] = {
+static unsigned char SEQ_NT36525B_056[] = {
 	0x4D,
 	0x12,
 };
 
-static unsigned char SEQ_NT36525B_056[] = {
+static unsigned char SEQ_NT36525B_057[] = {
 	0x4E,
 	0x34,
 };
 
-static unsigned char SEQ_NT36525B_057[] = {
+static unsigned char SEQ_NT36525B_058[] = {
 	0x51,
 	0x43,
 };
 
-static unsigned char SEQ_NT36525B_058[] = {
+static unsigned char SEQ_NT36525B_059[] = {
 	0x52,
 	0x21,
 };
 
-static unsigned char SEQ_NT36525B_059[] = {
+static unsigned char SEQ_NT36525B_060[] = {
 	0x55,
 	0x87,
 };
 
-static unsigned char SEQ_NT36525B_060[] = {
+static unsigned char SEQ_NT36525B_061[] = {
 	0x56,
 	0x44,
 };
 
-static unsigned char SEQ_NT36525B_061[] = {
+static unsigned char SEQ_NT36525B_062[] = {
 	0x5A,
 	0x9F,
 };
 
-static unsigned char SEQ_NT36525B_062[] = {
+static unsigned char SEQ_NT36525B_063[] = {
 	0x5B,
 	0x90,
 };
 
-static unsigned char SEQ_NT36525B_063[] = {
-	0x5C,
-	0x00,
-};
-
 static unsigned char SEQ_NT36525B_064[] = {
-	0x5D,
+	0x5C,
 	0x00,
 };
 
 static unsigned char SEQ_NT36525B_065[] = {
+	0x5D,
+	0x00,
+};
+
+static unsigned char SEQ_NT36525B_066[] = {
 	0x5E,
 	0x04,
 };
 
-static unsigned char SEQ_NT36525B_066[] = {
+static unsigned char SEQ_NT36525B_067[] = {
 	0x5F,
 	0x00,
 };
 
-static unsigned char SEQ_NT36525B_067[] = {
+static unsigned char SEQ_NT36525B_068[] = {
 	0x60,
 	0x80,
 };
 
-static unsigned char SEQ_NT36525B_068[] = {
+static unsigned char SEQ_NT36525B_069[] = {
 	0x61,
 	0x90,
 };
 
-static unsigned char SEQ_NT36525B_069[] = {
+static unsigned char SEQ_NT36525B_070[] = {
 	0x64,
 	0x11,
 };
 
-static unsigned char SEQ_NT36525B_070[] = {
+static unsigned char SEQ_NT36525B_071[] = {
 	0x82,
 	0x0D,
 };
 
-static unsigned char SEQ_NT36525B_071[] = {
+static unsigned char SEQ_NT36525B_072[] = {
 	0x83,
 	0x05,
 };
 
-static unsigned char SEQ_NT36525B_072[] = {
+static unsigned char SEQ_NT36525B_073[] = {
 	0x85,
 	0x00,
 };
 
-static unsigned char SEQ_NT36525B_073[] = {
+static unsigned char SEQ_NT36525B_074[] = {
 	0x86,
 	0x51,
 };
 
-static unsigned char SEQ_NT36525B_074[] = {
+static unsigned char SEQ_NT36525B_075[] = {
 	0x92,
 	0xAD,
 };
 
-static unsigned char SEQ_NT36525B_075[] = {
+static unsigned char SEQ_NT36525B_076[] = {
 	0x93,
 	0x08,
 };
 
-static unsigned char SEQ_NT36525B_076[] = {
+static unsigned char SEQ_NT36525B_077[] = {
 	0x94,
 	0x0E,
 };
 
-static unsigned char SEQ_NT36525B_077[] = {
+static unsigned char SEQ_NT36525B_078[] = {
 	0xAB,
 	0x00,
 };
 
-static unsigned char SEQ_NT36525B_078[] = {
+static unsigned char SEQ_NT36525B_079[] = {
 	0xAC,
 	0x00,
 };
 
-static unsigned char SEQ_NT36525B_079[] = {
+static unsigned char SEQ_NT36525B_080[] = {
 	0xAD,
 	0x00,
 };
 
-static unsigned char SEQ_NT36525B_080[] = {
+static unsigned char SEQ_NT36525B_081[] = {
 	0xAF,
 	0x04,
 };
 
-static unsigned char SEQ_NT36525B_081[] = {
+static unsigned char SEQ_NT36525B_082[] = {
 	0xB0,
 	0x05,
 };
 
-static unsigned char SEQ_NT36525B_082[] = {
+static unsigned char SEQ_NT36525B_083[] = {
 	0xB1,
 	0xA8,
 };
 
-static unsigned char SEQ_NT36525B_083[] = {
+static unsigned char SEQ_NT36525B_084[] = {
 	0xC2,
 	0x86,
 };
 
-static unsigned char SEQ_NT36525B_084[] = {
+static unsigned char SEQ_NT36525B_085[] = {
 	0xFF,
 	0x25,
 };
 
-static unsigned char SEQ_NT36525B_085[] = {
+static unsigned char SEQ_NT36525B_086[] = {
 	0xFB,
 	0x01,
 };
 
-static unsigned char SEQ_NT36525B_086[] = {
+static unsigned char SEQ_NT36525B_087[] = {
 	0x0A,
 	0x82,
 };
 
-static unsigned char SEQ_NT36525B_087[] = {
+static unsigned char SEQ_NT36525B_088[] = {
 	0x0B,
 	0x26,
 };
 
-static unsigned char SEQ_NT36525B_088[] = {
+static unsigned char SEQ_NT36525B_089[] = {
 	0x0C,
 	0x01,
 };
 
-static unsigned char SEQ_NT36525B_089[] = {
+static unsigned char SEQ_NT36525B_090[] = {
 	0x17,
 	0x82,
 };
 
-static unsigned char SEQ_NT36525B_090[] = {
+static unsigned char SEQ_NT36525B_091[] = {
 	0x18,
 	0x06,
 };
 
-static unsigned char SEQ_NT36525B_091[] = {
+static unsigned char SEQ_NT36525B_092[] = {
 	0x19,
 	0x0F,
 };
 
-static unsigned char SEQ_NT36525B_092[] = {
+static unsigned char SEQ_NT36525B_093[] = {
 	0x58,
 	0x00,
 };
 
-static unsigned char SEQ_NT36525B_093[] = {
+static unsigned char SEQ_NT36525B_094[] = {
 	0x59,
 	0x00,
 };
 
-static unsigned char SEQ_NT36525B_094[] = {
+static unsigned char SEQ_NT36525B_095[] = {
 	0x5A,
 	0x40,
 };
 
-static unsigned char SEQ_NT36525B_095[] = {
+static unsigned char SEQ_NT36525B_096[] = {
 	0x5B,
 	0x80,
 };
 
-static unsigned char SEQ_NT36525B_096[] = {
+static unsigned char SEQ_NT36525B_097[] = {
 	0x5C,
 	0x00,
 };
 
-static unsigned char SEQ_NT36525B_097[] = {
+static unsigned char SEQ_NT36525B_098[] = {
 	0x5D,
 	0x9F,
 };
 
-static unsigned char SEQ_NT36525B_098[] = {
+static unsigned char SEQ_NT36525B_099[] = {
 	0x5E,
 	0x90,
 };
 
-static unsigned char SEQ_NT36525B_099[] = {
+static unsigned char SEQ_NT36525B_100[] = {
 	0x5F,
 	0x9F,
 };
 
-static unsigned char SEQ_NT36525B_100[] = {
+static unsigned char SEQ_NT36525B_101[] = {
 	0x60,
 	0x90,
 };
 
-static unsigned char SEQ_NT36525B_101[] = {
+static unsigned char SEQ_NT36525B_102[] = {
 	0x61,
 	0x9F,
 };
 
-static unsigned char SEQ_NT36525B_102[] = {
+static unsigned char SEQ_NT36525B_103[] = {
 	0x62,
 	0x90,
 };
 
-static unsigned char SEQ_NT36525B_103[] = {
+static unsigned char SEQ_NT36525B_104[] = {
 	0x65,
 	0x05,
 };
 
-static unsigned char SEQ_NT36525B_104[] = {
+static unsigned char SEQ_NT36525B_105[] = {
 	0x66,
 	0xA8,
 };
 
-static unsigned char SEQ_NT36525B_105[] = {
+static unsigned char SEQ_NT36525B_106[] = {
 	0xC0,
 	0x03,
 };
 
-static unsigned char SEQ_NT36525B_106[] = {
+static unsigned char SEQ_NT36525B_107[] = {
 	0xCA,
 	0x1C,
 };
 
-static unsigned char SEQ_NT36525B_107[] = {
+static unsigned char SEQ_NT36525B_108[] = {
 	0xCC,
 	0x1C,
 };
 
-static unsigned char SEQ_NT36525B_108[] = {
+static unsigned char SEQ_NT36525B_109[] = {
 	0xD3,
 	0x11,
 };
 
-static unsigned char SEQ_NT36525B_109[] = {
+static unsigned char SEQ_NT36525B_110[] = {
 	0xD4,
 	0xC8,
 };
 
-static unsigned char SEQ_NT36525B_110[] = {
+static unsigned char SEQ_NT36525B_111[] = {
 	0xD5,
 	0x11,
 };
 
-static unsigned char SEQ_NT36525B_111[] = {
+static unsigned char SEQ_NT36525B_112[] = {
 	0xD6,
 	0x1C,
 };
 
-static unsigned char SEQ_NT36525B_112[] = {
+static unsigned char SEQ_NT36525B_113[] = {
 	0xD7,
 	0x11,
 };
 
-static unsigned char SEQ_NT36525B_113[] = {
+static unsigned char SEQ_NT36525B_114[] = {
 	0xFF,
 	0x26,
 };
 
-static unsigned char SEQ_NT36525B_114[] = {
+static unsigned char SEQ_NT36525B_115[] = {
 	0xFB,
 	0x01,
 };
 
-static unsigned char SEQ_NT36525B_115[] = {
+static unsigned char SEQ_NT36525B_116[] = {
 	0x00,
 	0xA0,
 };
 
-static unsigned char SEQ_NT36525B_116[] = {
+static unsigned char SEQ_NT36525B_117[] = {
 	0xFF,
 	0x27,
 };
 
-static unsigned char SEQ_NT36525B_117[] = {
+static unsigned char SEQ_NT36525B_118[] = {
 	0xFB,
 	0x01,
 };
 
-static unsigned char SEQ_NT36525B_118[] = {
+static unsigned char SEQ_NT36525B_119[] = {
 	0x13,
 	0x00,
 };
 
-static unsigned char SEQ_NT36525B_119[] = {
+static unsigned char SEQ_NT36525B_120[] = {
 	0x15,
 	0xB4,
 };
 
-static unsigned char SEQ_NT36525B_120[] = {
+static unsigned char SEQ_NT36525B_121[] = {
 	0x1F,
 	0x55,
 };
 
-static unsigned char SEQ_NT36525B_121[] = {
+static unsigned char SEQ_NT36525B_122[] = {
 	0x26,
 	0x0F,
 };
 
-static unsigned char SEQ_NT36525B_122[] = {
+static unsigned char SEQ_NT36525B_123[] = {
 	0xC0,
 	0x18,
 };
 
-static unsigned char SEQ_NT36525B_123[] = {
+static unsigned char SEQ_NT36525B_124[] = {
 	0xC1,
 	0xF0,
 };
 
-static unsigned char SEQ_NT36525B_124[] = {
+static unsigned char SEQ_NT36525B_125[] = {
 	0xC2,
 	0x00,
 };
 
-static unsigned char SEQ_NT36525B_125[] = {
+static unsigned char SEQ_NT36525B_126[] = {
 	0xC3,
 	0x00,
 };
 
-static unsigned char SEQ_NT36525B_126[] = {
+static unsigned char SEQ_NT36525B_127[] = {
 	0xC4,
 	0xF0,
 };
 
-static unsigned char SEQ_NT36525B_127[] = {
+static unsigned char SEQ_NT36525B_128[] = {
 	0xC5,
 	0x00,
 };
 
-static unsigned char SEQ_NT36525B_128[] = {
+static unsigned char SEQ_NT36525B_129[] = {
 	0xC6,
 	0x00,
 };
 
-static unsigned char SEQ_NT36525B_129[] = {
+static unsigned char SEQ_NT36525B_130[] = {
 	0xC7,
 	0x03,
 };
 
-static unsigned char SEQ_NT36525B_130[] = {
+static unsigned char SEQ_NT36525B_131[] = {
 	0xFF,
 	0x23,
 };
 
-static unsigned char SEQ_NT36525B_131[] = {
+static unsigned char SEQ_NT36525B_132[] = {
 	0xFB,
 	0x01,
 };
 
-static unsigned char SEQ_NT36525B_132[] = {
-	0x00,
-	0x00,
-};
-
 static unsigned char SEQ_NT36525B_133[] = {
-	0x04,
+	0x00,
 	0x00,
 };
 
 static unsigned char SEQ_NT36525B_134[] = {
+	0x04,
+	0x00,
+};
+
+static unsigned char SEQ_NT36525B_135[] = {
 	0x07,
 	0x20,
 };
 
-static unsigned char SEQ_NT36525B_135[] = {
+static unsigned char SEQ_NT36525B_136[] = {
 	0x08,
 	0x0F,
 };
 
-static unsigned char SEQ_NT36525B_136[] = {
+static unsigned char SEQ_NT36525B_137[] = {
 	0x09,
 	0x00,
 };
 
-static unsigned char SEQ_NT36525B_137[] = {
+static unsigned char SEQ_NT36525B_138[] = {
 	0x12,
 	0xB4,
 };
 
-static unsigned char SEQ_NT36525B_138[] = {
+static unsigned char SEQ_NT36525B_139[] = {
 	0x15,
 	0xE9,
 };
 
-static unsigned char SEQ_NT36525B_139[] = {
+static unsigned char SEQ_NT36525B_140[] = {
 	0x16,
 	0x0B,
 };
 
-static unsigned char SEQ_NT36525B_140[] = {
-	0x19,
-	0x00,
-};
-
 static unsigned char SEQ_NT36525B_141[] = {
-	0x1A,
+	0x19,
 	0x00,
 };
 
 static unsigned char SEQ_NT36525B_142[] = {
+	0x1A,
+	0x00,
+};
+
+static unsigned char SEQ_NT36525B_143[] = {
 	0x1B,
 	0x08,
 };
 
-static unsigned char SEQ_NT36525B_143[] = {
+static unsigned char SEQ_NT36525B_144[] = {
 	0x1C,
 	0x0A,
 };
 
-static unsigned char SEQ_NT36525B_144[] = {
+static unsigned char SEQ_NT36525B_145[] = {
 	0x1D,
 	0x0C,
 };
 
-static unsigned char SEQ_NT36525B_145[] = {
+static unsigned char SEQ_NT36525B_146[] = {
 	0x1E,
 	0x12,
 };
 
-static unsigned char SEQ_NT36525B_146[] = {
+static unsigned char SEQ_NT36525B_147[] = {
 	0x1F,
 	0x16,
 };
 
-static unsigned char SEQ_NT36525B_147[] = {
+static unsigned char SEQ_NT36525B_148[] = {
 	0x20,
 	0x1A,
 };
 
-static unsigned char SEQ_NT36525B_148[] = {
+static unsigned char SEQ_NT36525B_149[] = {
 	0x21,
 	0x1C,
 };
 
-static unsigned char SEQ_NT36525B_149[] = {
+static unsigned char SEQ_NT36525B_150[] = {
 	0x22,
 	0x20,
 };
 
-static unsigned char SEQ_NT36525B_150[] = {
+static unsigned char SEQ_NT36525B_151[] = {
 	0x23,
 	0x24,
 };
 
-static unsigned char SEQ_NT36525B_151[] = {
+static unsigned char SEQ_NT36525B_152[] = {
 	0x24,
 	0x28,
 };
 
-static unsigned char SEQ_NT36525B_152[] = {
+static unsigned char SEQ_NT36525B_153[] = {
 	0x25,
 	0x2C,
 };
 
-static unsigned char SEQ_NT36525B_153[] = {
+static unsigned char SEQ_NT36525B_154[] = {
 	0x26,
 	0x30,
 };
 
-static unsigned char SEQ_NT36525B_154[] = {
+static unsigned char SEQ_NT36525B_155[] = {
 	0x27,
 	0x38,
 };
 
-static unsigned char SEQ_NT36525B_155[] = {
+static unsigned char SEQ_NT36525B_156[] = {
 	0x28,
 	0x3C,
 };
 
-static unsigned char SEQ_NT36525B_156[] = {
+static unsigned char SEQ_NT36525B_157[] = {
 	0x29,
 	0x10,
 };
 
-static unsigned char SEQ_NT36525B_157[] = {
+static unsigned char SEQ_NT36525B_158[] = {
 	0x30,
 	0xFF,
 };
 
-static unsigned char SEQ_NT36525B_158[] = {
+static unsigned char SEQ_NT36525B_159[] = {
 	0x31,
 	0xFF,
 };
 
-static unsigned char SEQ_NT36525B_159[] = {
+static unsigned char SEQ_NT36525B_160[] = {
 	0x32,
 	0xFE,
 };
 
-static unsigned char SEQ_NT36525B_160[] = {
+static unsigned char SEQ_NT36525B_161[] = {
 	0x33,
 	0xFD,
 };
 
-static unsigned char SEQ_NT36525B_161[] = {
+static unsigned char SEQ_NT36525B_162[] = {
 	0x34,
 	0xFD,
 };
 
-static unsigned char SEQ_NT36525B_162[] = {
+static unsigned char SEQ_NT36525B_163[] = {
 	0x35,
 	0xFC,
 };
 
-static unsigned char SEQ_NT36525B_163[] = {
+static unsigned char SEQ_NT36525B_164[] = {
 	0x36,
 	0xFB,
 };
 
-static unsigned char SEQ_NT36525B_164[] = {
+static unsigned char SEQ_NT36525B_165[] = {
 	0x37,
 	0xF9,
 };
 
-static unsigned char SEQ_NT36525B_165[] = {
+static unsigned char SEQ_NT36525B_166[] = {
 	0x38,
 	0xF7,
 };
 
-static unsigned char SEQ_NT36525B_166[] = {
+static unsigned char SEQ_NT36525B_167[] = {
 	0x39,
 	0xF3,
 };
 
-static unsigned char SEQ_NT36525B_167[] = {
+static unsigned char SEQ_NT36525B_168[] = {
 	0x3A,
 	0xEA,
 };
 
-static unsigned char SEQ_NT36525B_168[] = {
+static unsigned char SEQ_NT36525B_169[] = {
 	0x3B,
 	0xE6,
 };
 
-static unsigned char SEQ_NT36525B_169[] = {
+static unsigned char SEQ_NT36525B_170[] = {
 	0x3D,
 	0xE0,
 };
 
-static unsigned char SEQ_NT36525B_170[] = {
+static unsigned char SEQ_NT36525B_171[] = {
 	0x3F,
 	0xDD,
 };
 
-static unsigned char SEQ_NT36525B_171[] = {
+static unsigned char SEQ_NT36525B_172[] = {
 	0x40,
 	0xDB,
 };
 
-static unsigned char SEQ_NT36525B_172[] = {
+static unsigned char SEQ_NT36525B_173[] = {
 	0x41,
 	0xD9,
 };
 
-static unsigned char SEQ_NT36525B_173[] = {
+static unsigned char SEQ_NT36525B_174[] = {
 	0xFF,
 	0x20,
 };
 
-static unsigned char SEQ_NT36525B_174[] = {
+static unsigned char SEQ_NT36525B_175[] = {
 	0xFB,
 	0x01,
 };
 
-static unsigned char SEQ_NT36525B_175[] = {
+static unsigned char SEQ_NT36525B_176[] = {
 	0xB0,
 	0x00, 0x08, 0x00, 0x18, 0x00, 0x33, 0x00, 0x4B, 0x00, 0x5F,
 	0x00, 0x72, 0x00, 0x83, 0x00, 0x94,
 };
 
-static unsigned char SEQ_NT36525B_176[] = {
+static unsigned char SEQ_NT36525B_177[] = {
 	0xB1,
 	0x00, 0xA2, 0x00, 0xD7, 0x00, 0xFF, 0x01, 0x41, 0x01, 0x6F,
 	0x01, 0xBD, 0x01, 0xF8, 0x01, 0xFA,
 };
 
-static unsigned char SEQ_NT36525B_177[] = {
+static unsigned char SEQ_NT36525B_178[] = {
 	0xB2,
 	0x02, 0x36, 0x02, 0x71, 0x02, 0x9C, 0x02, 0xD0, 0x02, 0xF5,
 	0x03, 0x20, 0x03, 0x30, 0x03, 0x3E,
 };
 
-static unsigned char SEQ_NT36525B_178[] = {
+static unsigned char SEQ_NT36525B_179[] = {
 	0xB3,
 	0x03, 0x4F, 0x03, 0x63, 0x03, 0x7B, 0x03, 0x95, 0x03, 0xA6,
 	0x03, 0xA7,
 };
 
-static unsigned char SEQ_NT36525B_179[] = {
+static unsigned char SEQ_NT36525B_180[] = {
 	0xB4,
 	0x00, 0x08, 0x00, 0x18, 0x00, 0x33, 0x00, 0x4B, 0x00, 0x5F,
 	0x00, 0x72, 0x00, 0x83, 0x00, 0x94,
 };
 
-static unsigned char SEQ_NT36525B_180[] = {
+static unsigned char SEQ_NT36525B_181[] = {
 	0xB5,
 	0x00, 0xA2, 0x00, 0xD7, 0x00, 0xFF, 0x01, 0x41, 0x01, 0x6F,
 	0x01, 0xBD, 0x01, 0xF8, 0x01, 0xFA,
 };
 
-static unsigned char SEQ_NT36525B_181[] = {
+static unsigned char SEQ_NT36525B_182[] = {
 	0xB6,
 	0x02, 0x36, 0x02, 0x71, 0x02, 0x9C, 0x02, 0xD0, 0x02, 0xF5,
 	0x03, 0x20, 0x03, 0x30, 0x03, 0x3E,
 };
 
-static unsigned char SEQ_NT36525B_182[] = {
+static unsigned char SEQ_NT36525B_183[] = {
 	0xB7,
 	0x03, 0x4F, 0x03, 0x63, 0x03, 0x7B, 0x03, 0x95, 0x03, 0xA6,
 	0x03, 0xA7,
 };
 
-static unsigned char SEQ_NT36525B_183[] = {
+static unsigned char SEQ_NT36525B_184[] = {
 	0xB8,
 	0x00, 0x08, 0x00, 0x18, 0x00, 0x33, 0x00, 0x4B, 0x00, 0x5F,
 	0x00, 0x72, 0x00, 0x83, 0x00, 0x94,
 };
 
-static unsigned char SEQ_NT36525B_184[] = {
+static unsigned char SEQ_NT36525B_185[] = {
 	0xB9,
 	0x00, 0xA2, 0x00, 0xD7, 0x00, 0xFF, 0x01, 0x41, 0x01, 0x6F,
 	0x01, 0xBD, 0x01, 0xF8, 0x01, 0xFA,
 };
 
-static unsigned char SEQ_NT36525B_185[] = {
+static unsigned char SEQ_NT36525B_186[] = {
 	0xBA,
 	0x02, 0x36, 0x02, 0x71, 0x02, 0x9C, 0x02, 0xD0, 0x02, 0xF5,
 	0x03, 0x20, 0x03, 0x30, 0x03, 0x3E,
 };
 
-static unsigned char SEQ_NT36525B_186[] = {
+static unsigned char SEQ_NT36525B_187[] = {
 	0xBB,
 	0x03, 0x4F, 0x03, 0x63, 0x03, 0x7B, 0x03, 0x95, 0x03, 0xA6,
 	0x03, 0xA7,
 };
 
-static unsigned char SEQ_NT36525B_187[] = {
+static unsigned char SEQ_NT36525B_188[] = {
 	0xFF,
 	0x21,
 };
 
-static unsigned char SEQ_NT36525B_188[] = {
+static unsigned char SEQ_NT36525B_189[] = {
 	0xFB,
 	0x01,
 };
 
-static unsigned char SEQ_NT36525B_189[] = {
+static unsigned char SEQ_NT36525B_190[] = {
 	0xB0,
 	0x00, 0x00, 0x00, 0x10, 0x00, 0x2B, 0x00, 0x43, 0x00, 0x57,
 	0x00, 0x6A, 0x00, 0x7B, 0x00, 0x8C,
 };
 
-static unsigned char SEQ_NT36525B_190[] = {
+static unsigned char SEQ_NT36525B_191[] = {
 	0xB1,
 	0x00, 0x9A, 0x00, 0xCF, 0x00, 0xF7, 0x01, 0x39, 0x01, 0x67,
 	0x01, 0xB5, 0x01, 0xF0, 0x01, 0xF2,
 };
 
-static unsigned char SEQ_NT36525B_191[] = {
+static unsigned char SEQ_NT36525B_192[] = {
 	0xB2,
 	0x02, 0x2E, 0x02, 0x7B, 0x02, 0xAE, 0x02, 0xEA, 0x03, 0x13,
 	0x03, 0x42, 0x03, 0x52, 0x03, 0x62,
 };
 
-static unsigned char SEQ_NT36525B_192[] = {
+static unsigned char SEQ_NT36525B_193[] = {
 	0xB3,
 	0x03, 0x73, 0x03, 0x89, 0x03, 0xA1, 0x03, 0xBD, 0x03, 0xCE,
 	0x03, 0xD9,
 };
 
-static unsigned char SEQ_NT36525B_193[] = {
+static unsigned char SEQ_NT36525B_194[] = {
 	0xB4,
 	0x00, 0x00, 0x00, 0x10, 0x00, 0x2B, 0x00, 0x43, 0x00, 0x57,
 	0x00, 0x6A, 0x00, 0x7B, 0x00, 0x8C,
 };
 
-static unsigned char SEQ_NT36525B_194[] = {
+static unsigned char SEQ_NT36525B_195[] = {
 	0xB5,
 	0x00, 0x9A, 0x00, 0xCF, 0x00, 0xF7, 0x01, 0x39, 0x01, 0x67,
 	0x01, 0xB5, 0x01, 0xF0, 0x01, 0xF2,
 };
 
-static unsigned char SEQ_NT36525B_195[] = {
+static unsigned char SEQ_NT36525B_196[] = {
 	0xB6,
 	0x02, 0x2E, 0x02, 0x7B, 0x02, 0xAE, 0x02, 0xEA, 0x03, 0x13,
 	0x03, 0x42, 0x03, 0x52, 0x03, 0x62,
 };
 
-static unsigned char SEQ_NT36525B_196[] = {
+static unsigned char SEQ_NT36525B_197[] = {
 	0xB7,
 	0x03, 0x73, 0x03, 0x89, 0x03, 0xA1, 0x03, 0xBD, 0x03, 0xCE,
 	0x03, 0xD9,
 };
 
-static unsigned char SEQ_NT36525B_197[] = {
+static unsigned char SEQ_NT36525B_198[] = {
 	0xB8,
 	0x00, 0x00, 0x00, 0x10, 0x00, 0x2B, 0x00, 0x43, 0x00, 0x57,
 	0x00, 0x6A, 0x00, 0x7B, 0x00, 0x8C,
 };
 
-static unsigned char SEQ_NT36525B_198[] = {
+static unsigned char SEQ_NT36525B_199[] = {
 	0xB9,
 	0x00, 0x9A, 0x00, 0xCF, 0x00, 0xF7, 0x01, 0x39, 0x01, 0x67,
 	0x01, 0xB5, 0x01, 0xF0, 0x01, 0xF2,
 };
 
-static unsigned char SEQ_NT36525B_199[] = {
+static unsigned char SEQ_NT36525B_200[] = {
 	0xBA,
 	0x02, 0x2E, 0x02, 0x7B, 0x02, 0xAE, 0x02, 0xEA, 0x03, 0x13,
 	0x03, 0x42, 0x03, 0x52, 0x03, 0x62,
 };
 
-static unsigned char SEQ_NT36525B_200[] = {
+static unsigned char SEQ_NT36525B_201[] = {
 	0xBB,
 	0x03, 0x73, 0x03, 0x89, 0x03, 0xA1, 0x03, 0xBD, 0x03, 0xCE,
 	0x03, 0xD9,
 };
 
-static unsigned char SEQ_NT36525B_201[] = {
+static unsigned char SEQ_NT36525B_202[] = {
 	0xFF,
 	0x24,
 };
 
-static unsigned char SEQ_NT36525B_202[] = {
+static unsigned char SEQ_NT36525B_203[] = {
 	0xFB,
 	0x01,
 };
 
-static unsigned char SEQ_NT36525B_203[] = {
+static unsigned char SEQ_NT36525B_204[] = {
 	0x92,
 	0xA9,
 };
 
-static unsigned char SEQ_NT36525B_204[] = {
+static unsigned char SEQ_NT36525B_205[] = {
 	0xB1,
 	0xA4,
 };
 
-static unsigned char SEQ_NT36525B_205[] = {
+static unsigned char SEQ_NT36525B_206[] = {
 	0xFF,
 	0x25,
 };
 
-static unsigned char SEQ_NT36525B_206[] = {
+static unsigned char SEQ_NT36525B_207[] = {
 	0xFB,
 	0x01,
 };
 
-static unsigned char SEQ_NT36525B_207[] = {
+static unsigned char SEQ_NT36525B_208[] = {
 	0x0B,
 	0x19,
 };
 
-static unsigned char SEQ_NT36525B_208[] = {
+static unsigned char SEQ_NT36525B_209[] = {
 	0x66,
 	0xA4,
 };
 
-static unsigned char SEQ_NT36525B_209[] = {
+static unsigned char SEQ_NT36525B_210[] = {
 	0xFF,
 	0xE0,
 };
 
-static unsigned char SEQ_NT36525B_210[] = {
+static unsigned char SEQ_NT36525B_211[] = {
 	0xFB,
 	0x01,
 };
 
-static unsigned char SEQ_NT36525B_211[] = {
+static unsigned char SEQ_NT36525B_212[] = {
 	0x25,
 	0x11,
 };
 
-static unsigned char SEQ_NT36525B_212[] = {
+static unsigned char SEQ_NT36525B_213[] = {
 	0x4E,
 	0x01,
 };
 
-static unsigned char SEQ_NT36525B_213[] = {
+static unsigned char SEQ_NT36525B_214[] = {
 	0xFF,
 	0x10,
 };
 
-static unsigned char SEQ_NT36525B_214[] = {
+static unsigned char SEQ_NT36525B_215[] = {
 	0xFB,
 	0x01,
 };
 
-static unsigned char SEQ_NT36525B_215[] = {
+static unsigned char SEQ_NT36525B_216[] = {
 	0xBA,
 	0x02,
 };
 
-static unsigned char SEQ_NT36525B_216[] = {
+static unsigned char SEQ_NT36525B_217[] = {
 	0x51,
 	0x00,
 };
 
-static unsigned char SEQ_NT36525B_217[] = {
+static unsigned char SEQ_NT36525B_218[] = {
 	0x53,
 	0x2C,
 };
 
-static unsigned char SEQ_NT36525B_218[] = {
+static unsigned char SEQ_NT36525B_219[] = {
 	0x55,
 	0x01,
 };
 
-static unsigned char SEQ_NT36525B_219[] = {
+static unsigned char SEQ_NT36525B_220[] = {
 	0x68,
 	0x00, 0x01,
 };
@@ -1394,6 +1399,7 @@ static struct lcd_seq_info LCD_SEQ_INIT_1[] = {
 	{SEQ_NT36525B_217, ARRAY_SIZE(SEQ_NT36525B_217), 0, },
 	{SEQ_NT36525B_218, ARRAY_SIZE(SEQ_NT36525B_218), 0, },
 	{SEQ_NT36525B_219, ARRAY_SIZE(SEQ_NT36525B_219), 0, },
+	{SEQ_NT36525B_220, ARRAY_SIZE(SEQ_NT36525B_220), 0, },
 };
 
 /* DO NOT REMOVE: back to page 1 for setting DCS commands */

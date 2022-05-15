@@ -494,7 +494,8 @@ enum ENUM_CMD_TX_RESULT {
 #define KAL_TEST_BIT(bitOffset, value)     test_bit(bitOffset, &value)
 #define SUSPEND_FLAG_FOR_WAKEUP_REASON	(0)
 #define SUSPEND_FLAG_CLEAR_WHEN_RESUME	(1)
-
+#define GLUE_FLAG_WLAN_RESUME	(2)
+#define GLUE_FLAG_WLAN_SUSPEND  (3)
 
 /*----------------------------------------------------------------------------*/
 /* Macros of getting current thread id                                        */
@@ -1121,6 +1122,13 @@ do { \
 #define TRACE(_expr, _fmt, ...) _expr
 
 #endif
+
+/*----------------------------------------------------------------------------*/
+/* Macros of wiphy operations for using in Driver Layer                       */
+/*----------------------------------------------------------------------------*/
+#define WIPHY_PRIV(_wiphy, _priv) \
+	(_priv = *((struct GLUE_INFO **) wiphy_priv(_wiphy)))
+
 /*******************************************************************************
  *                  F U N C T I O N   D E C L A R A T I O N S
  *******************************************************************************

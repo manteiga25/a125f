@@ -32,10 +32,7 @@
 #include <linux/muic/common/muic.h>
 #include <linux/muic/common/muic_sysfs.h>
 #include <linux/sec_class.h>
-
-#include <linux/sec_batt.h>
-#include "../../battery/common/sec_charging_common.h"
-
+#include <linux/battery/sec_battery_common.h>
 #if IS_BUILTIN(CONFIG_MUIC_NOTIFIER)
 #if defined(CONFIG_ARCH_QCOM)
 #include <linux/sec_param.h>

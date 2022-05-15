@@ -22,6 +22,11 @@
 #endif
 #include "u_os_desc.h"
 
+#ifdef CONFIG_TCPC_CLASS
+#include "tcpm.h"
+#include "tcpci_core.h"
+#endif
+
 /**
  * struct usb_os_string - represents OS String to be reported by a gadget
  * @bLength: total length of the entire descritor, always 0x12
@@ -565,6 +570,38 @@ static u8 encode_bMaxPower(enum usb_device_speed speed,
 		return min(val, 900U) / 8;
 }
 
+#ifdef CONFIG_TCPC_CLASS
+static struct tcpc_device *tcpc_dev;
+
+static int __init usb_pd_init(void)
+{
+	tcpc_dev = tcpc_dev_get_by_name("type_c_port0");
+	if (!tcpc_dev)
+		pr_info("%s get tcpc device type_c_port0 fail\n", __func__);
+
+	return 0;
+}
+late_initcall(usb_pd_init);
+
+static bool is_usb_pd(void)
+{
+	struct pd_port *pd_port;
+
+	if (!tcpc_dev)
+		return false;
+
+	pd_port = &tcpc_dev->pd_port;
+
+	pr_info("%s pe_ready=%d\n", __func__, pd_port->pe_data.pe_ready);
+
+	if (pd_port->pe_data.pe_ready)
+		return true;
+	else
+		return false;
+}
+#endif
+
+
 static int config_buf(struct usb_configuration *config,
 		enum usb_device_speed speed, void *buf, u8 type)
 {
@@ -593,6 +630,15 @@ static int config_buf(struct usb_configuration *config,
 	c->bmAttributes = USB_CONFIG_ATT_ONE | config->bmAttributes;
 #endif
 	c->bMaxPower = encode_bMaxPower(speed, config);
+
+#ifdef CONFIG_TCPC_CLASS
+	if (is_usb_pd()) {
+		c->bmAttributes |= USB_CONFIG_ATT_SELFPOWER;
+		c->bMaxPower = 0;
+	} else {
+		c->bmAttributes &= ~USB_CONFIG_ATT_SELFPOWER;
+	}
+#endif
 
 	/* There may be e.g. OTG descriptors */
 	if (config->descriptors) {
@@ -1781,6 +1827,18 @@ composite_setup(struct usb_gadget *gadget, const struct usb_ctrlrequest *ctrl)
 	u8				endp;
 	static DEFINE_RATELIMIT_STATE(ratelimit, 1 * HZ, 5);
 
+	if (w_length > USB_COMP_EP0_BUFSIZ) {
+		if (ctrl->bRequestType & USB_DIR_IN) {
+			/* Cast away the const, we are going to overwrite on purpose. */
+			__le16 *temp = (__le16 *)&ctrl->wLength;
+
+			*temp = cpu_to_le16(USB_COMP_EP0_BUFSIZ);
+			w_length = USB_COMP_EP0_BUFSIZ;
+		} else {
+			goto done;
+		}
+	}
+
 	/* partial re-init of the response message; the function or the
 	 * gadget might need to intercept e.g. a control-OUT completion
 	 * when we delegate to it.
@@ -2357,7 +2415,7 @@ int composite_dev_prepare(struct usb_composite_driver *composite,
 	if (!cdev->req)
 		return -ENOMEM;
 
-	cdev->req->buf = kmalloc(USB_COMP_EP0_BUFSIZ, GFP_KERNEL);
+	cdev->req->buf = kzalloc(USB_COMP_EP0_BUFSIZ, GFP_KERNEL);
 	if (!cdev->req->buf)
 		goto fail;
 

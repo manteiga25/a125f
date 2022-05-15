@@ -26,21 +26,26 @@ void report_event_proximity_calibration(void)
 		data->chipset_funcs->pre_report_event_proximity();
 }
 
-void init_proximity_calibration(bool en)
+int init_proximity_calibration(bool en)
 {
 	struct shub_sensor *sensor = get_sensor(SENSOR_TYPE_PROXIMITY_CALIBRATION);
 
 	if (!sensor)
-		return;
+		return 0;
 
 	if (en) {
 		strcpy(sensor->name, "proximity_calibration");
 		sensor->receive_event_size = 4;
 		sensor->report_event_size = 0;
 		sensor->event_buffer.value = kzalloc(sizeof(struct prox_cal_event), GFP_KERNEL);
+		if (!sensor->event_buffer.value)
+			goto err_no_mem;
+
+		sensor->funcs = kzalloc(sizeof(struct sensor_funcs), GFP_KERNEL);
+		if (!sensor->funcs)
+			goto err_no_mem;
 
 		sensor->data = get_sensor(SENSOR_TYPE_PROXIMITY)->data;
-		sensor->funcs = kzalloc(sizeof(struct sensor_funcs), GFP_KERNEL);
 		sensor->funcs->report_event = report_event_proximity_calibration;
 	} else {
 		kfree(sensor->event_buffer.value);
@@ -49,4 +54,15 @@ void init_proximity_calibration(bool en)
 		kfree(sensor->funcs);
 		sensor->funcs = NULL;
 	}
+
+	return 0;
+
+err_no_mem:
+	kfree(sensor->event_buffer.value);
+	sensor->event_buffer.value = NULL;
+
+	kfree(sensor->funcs);
+	sensor->funcs = NULL;
+
+	return -ENOMEM;
 }

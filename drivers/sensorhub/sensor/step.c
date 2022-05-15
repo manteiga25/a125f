@@ -28,20 +28,25 @@ void print_step_counter_debug(void)
 		  sensor->sampling_period, sensor->max_report_latency);
 }
 
-void init_step_counter(bool en)
+int init_step_counter(bool en)
 {
 	struct shub_sensor *sensor = get_sensor(SENSOR_TYPE_STEP_COUNTER);
 
 	if (!sensor)
-		return;
+		return 0;
 
 	if (en) {
 		strcpy(sensor->name, "step_cnt_sensor");
 		sensor->receive_event_size = 4;
 		sensor->report_event_size = 12;
 		sensor->event_buffer.value = kzalloc(sizeof(struct step_counter_event), GFP_KERNEL);
+		if (!sensor->event_buffer.value)
+			goto err_no_mem;
 
 		sensor->funcs = kzalloc(sizeof(struct sensor_funcs), GFP_KERNEL);
+		if (!sensor->funcs)
+			goto err_no_mem;
+
 		sensor->funcs->report_event = report_event_step_counter;
 		sensor->funcs->print_debug = print_step_counter_debug;
 	} else {
@@ -51,22 +56,41 @@ void init_step_counter(bool en)
 		kfree(sensor->funcs);
 		sensor->funcs = NULL;
 	}
+	return 0;
+
+err_no_mem:
+	kfree(sensor->event_buffer.value);
+	sensor->event_buffer.value = NULL;
+
+	kfree(sensor->funcs);
+	sensor->funcs = NULL;
+
+	return -ENOMEM;
 }
 
-void init_step_detector(bool en)
+int init_step_detector(bool en)
 {
 	struct shub_sensor *sensor = get_sensor(SENSOR_TYPE_STEP_DETECTOR);
 
 	if (!sensor)
-		return;
+		return 0;
 
 	if (en) {
 		strcpy(sensor->name, "step_det_sensor");
 		sensor->receive_event_size = 1;
 		sensor->report_event_size = 1;
 		sensor->event_buffer.value = kzalloc(sensor->receive_event_size, GFP_KERNEL);
+		if (!sensor->event_buffer.value)
+			goto err_no_mem;
 	} else {
 		kfree(sensor->event_buffer.value);
 		sensor->event_buffer.value = NULL;
 	}
+	return 0;
+
+err_no_mem:
+	kfree(sensor->event_buffer.value);
+	sensor->event_buffer.value = NULL;
+
+	return -ENOMEM;
 }

@@ -422,7 +422,8 @@ u_int8_t nic_rxd_v2_sanity_check(
 
 #if CFG_SUPPORT_FRAG_AGG_ATTACK_DETECTION
 	/* Drop fragmented broadcast and multicast frame */
-	if ((prSwRfb->fgIsBC | prSwRfb->fgIsMC)	&& (prSwRfb->fgFragFrame == TRUE)) {
+	if ((prSwRfb->fgIsBC | prSwRfb->fgIsMC)
+		&& (prSwRfb->fgFragFrame == TRUE)) {
 		fgDrop = TRUE;
 		DBGLOG(RSN, INFO,
 			"Drop fragmented broadcast and multicast\n");
@@ -610,6 +611,8 @@ void nic_rxd_v2_check_wakeup_reason(
 				u2Temp);
 			DBGLOG_MEM8(RX, INFO,
 				pvHeader, u2PktLen > 50 ? 50:u2PktLen);
+			DBGLOG_MEM8(RX, INFO, (uint8_t *)prSwRfb->prRxStatus,
+				prChipInfo->rxd_size);
 			break;
 		}
 		break;

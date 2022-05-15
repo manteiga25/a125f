@@ -6,3 +6,4 @@ obj-$(and $(CONFIG_SMCDSD_LCD_DEBUG),$(subst undefined,y,$(origin CONFIG_SAMSUNG
 
 obj-$(CONFIG_SMCDSD_PANEL_A12)	+= ili9882n_a12.o nt36525b_a12.o nt36525b_dtc_a12.o nt36525b_boe_a12.o nt36675_a12.o
 
+obj-$(CONFIG_SMCDSD_PANEL_A12U)	+= ili9882n_a12.o nt36525b_a12.o nt36525b_dtc_a12.o nt36525b_boe_a12.o nt36675_a12.o

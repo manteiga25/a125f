@@ -56,12 +56,12 @@ init_sensor init_sensor_funcs[] = {
 	init_pocket_mode,
 	init_pocket_mode_lite,
 	init_super,
+	init_hub_debugger,
 	init_thermistor,
 	init_tap_tracker,
 	init_shake_tracker,
 	init_move_detector,
 	init_led_cover_event,
-
 };
 
 static int make_sensor_instance(void)
@@ -238,10 +238,12 @@ int disable_sensor(int type, char *buf, int buf_len)
 		sensor->enabled = false;
 		sensor->disable_timestamp = get_current_timestamp();
 		get_tm(&(sensor->disable_time));
-		if (event->value)
-			memset(event->value, 0, sizeof(*(event->value)));
-		event->timestamp = 0;
-		event->received_timestamp = 0;
+		if (event) {
+			if (event->value)
+				memset(event->value, 0, sizeof(*(event->value)));
+			event->timestamp = 0;
+			event->received_timestamp = 0;
+		}
 
 	}
 
@@ -395,6 +397,8 @@ int parsing_bypass_data(char *dataframe, int *index, int frame_len)
 	shub_system_check_lock();
 	if (is_system_checking())
 		event_test_cb(type, event->timestamp);
+	if (is_event_order_checking())
+		order_test_cb(type, event->timestamp);
 	shub_system_check_unlock();
 #endif
 		batch_event_count--;
@@ -483,7 +487,7 @@ int get_sensors_scontext_probe_state(uint64_t *buf)
 
 bool get_sensor_probe_state(int type)
 {
-	if (type == SENSOR_TYPE_SCONTEXT || type == SENSOR_TYPE_SENSORHUB)
+	if (type == SENSOR_TYPE_SCONTEXT || type == SENSOR_TYPE_SENSORHUB || type == SENSOR_TYPE_HUB_DEBUGGER)
 		return true;
 
 	if (type < SENSOR_TYPE_LEGACY_MAX)
@@ -553,14 +557,14 @@ int open_sensors_calibration(void)
 
 int sync_sensors_attribute(void)
 {
-	int i;
+	int type;
 
 	if (!sensor_manager->is_fs_ready)
 		return 0;
 
 	shub_infof();
-	for (i = 0; i < SENSOR_TYPE_MAX; i++) {
-		struct shub_sensor *sensor = sensor_manager->sensor_list[i];
+	for (type = 0; type < SENSOR_TYPE_MAX; type++) {
+		struct shub_sensor *sensor = get_sensor(type);
 
 		EXECUTE_FUNC(sensor, sensor->funcs->sync_status);
 	}
@@ -656,7 +660,7 @@ int get_sensor_spec(char *buf)
 
 static void init_sensors(void)
 {
-	int i;
+	int i, ret;
 	int spec_count = get_probed_legacy_count();
 	struct sensor_spec_t *spec = (struct sensor_spec_t *)sensor_manager->sensor_spec;
 	char *vendor_list[VENDOR_MAX] = VENDOR_LIST;
@@ -667,8 +671,19 @@ static void init_sensors(void)
 	for (i = 0; i < spec_count; i++) {
 		struct shub_sensor *sensor = get_sensor(spec[i].uid);
 
-		if (sensor && sensor->funcs && sensor->funcs->init_chipset)
-			sensor->funcs->init_chipset(spec[i].name, vendor_list[spec[i].vendor]);
+		if (sensor) {
+			if (!sensor->event_buffer.value) { /* there is a error from init_sensor_funcs */
+				shub_errf("%d has error", spec[i].uid);
+				kfree(sensor);
+				sensor_manager->sensor_list[spec[i].uid] = NULL;
+			} else if (sensor->funcs && sensor->funcs->init_chipset) {
+				ret = sensor->funcs->init_chipset(spec[i].name, vendor_list[spec[i].vendor]);
+				if (ret < 0) {
+					kfree(sensor);
+					sensor_manager->sensor_list[spec[i].uid] = NULL;
+				}
+			}
+		}
 	}
 }
 

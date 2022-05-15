@@ -4663,7 +4663,10 @@ int primary_display_suspend(void)
 #ifdef MTK_FB_MMDVFS_SUPPORT
 	unsigned long long bandwidth;
 #endif
-
+#if defined(CONFIG_MTK_VSYNC_PRINT)
+	disp_unregister_irq_callback(vsync_print_handler);
+	pr_info("%s: vsync_print\n", __func__);
+#endif
 	DISPCHECK("primary_display_suspend begin\n");
 	mmprofile_log_ex(ddp_mmp_get_events()->primary_suspend,
 		MMPROFILE_FLAG_START, 0, 0);
@@ -5320,6 +5323,10 @@ done:
 	_primary_path_unlock(__func__);
 	DISPMSG("skip_update:%d\n", skip_update);
 
+#if defined(CONFIG_MTK_VSYNC_PRINT)
+	disp_register_irq_callback(vsync_print_handler);
+	pr_info("%s: vsync_print\n", __func__);
+#endif
 	mmprofile_log_ex(ddp_mmp_get_events()->primary_resume,
 		MMPROFILE_FLAG_END, 0, 0);
 	ddp_clk_check();

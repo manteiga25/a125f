@@ -174,21 +174,29 @@ static int inject_light_ab_additional_data(char *buf, int count)
 	return 0;
 }
 
-void init_light_autobrightness(bool en)
+int init_light_autobrightness(bool en)
 {
 	struct shub_sensor *sensor = get_sensor(SENSOR_TYPE_LIGHT_AUTOBRIGHTNESS);
 
 	if (!sensor)
-		return;
+		return 0;
 
 	if (en) {
 		strcpy(sensor->name, "auto_brightness");
 		sensor->receive_event_size = 9;
 		sensor->report_event_size = 5;
 		sensor->event_buffer.value = kzalloc(sizeof(struct light_ab_event), GFP_KERNEL);
+		if (!sensor->event_buffer.value)
+			goto err_no_mem;
 
 		sensor->data = kzalloc(sizeof(struct light_autobrightness_data), GFP_KERNEL);
+		if (!sensor->data)
+			goto err_no_mem;
+
 		sensor->funcs = kzalloc(sizeof(struct sensor_funcs), GFP_KERNEL);
+		if (!sensor->funcs)
+			goto err_no_mem;
+
 		sensor->funcs->sync_status = sync_light_autobrightness_status;
 		sensor->funcs->enable = enable_light_autobrightness;
 		sensor->funcs->disable = disable_light_autobrightness;
@@ -209,5 +217,17 @@ void init_light_autobrightness(bool en)
 		sensor->event_buffer.value = NULL;
 	}
 
-	return;
+	return 0;
+
+err_no_mem:
+	kfree(sensor->event_buffer.value);
+	sensor->event_buffer.value = NULL;
+
+	kfree(sensor->data);
+	sensor->data = NULL;
+
+	kfree(sensor->funcs);
+	sensor->funcs = NULL;
+
+	return -ENOMEM;
 }

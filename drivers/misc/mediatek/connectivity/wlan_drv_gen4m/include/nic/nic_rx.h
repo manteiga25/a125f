@@ -996,6 +996,11 @@ struct RX_DESC_OPS_T {
 #endif /* CFG_SUPPORT_WAKEUP_REASON_DEBUG */
 };
 
+struct ACTION_FRAME_SIZE_MAP {
+	uint16_t u2Index; /* High byte for Action, low byte for Category */
+	size_t len;
+};
+
 /*******************************************************************************
  *                           P R I V A T E   D A T A
  *******************************************************************************
@@ -1300,10 +1305,12 @@ struct RX_DESC_OPS_T {
 	((_u2FrameCtrl & MASK_FC_PROTECTED_FRAME) ? TRUE : FALSE)
 
 #define RXM_IS_TO_DS(_u2FrameCtrl) \
-	(((_u2FrameCtrl & MASK_TO_DS_FROM_DS ) == MASK_FC_TO_DS) ? TRUE : FALSE)
+	(((_u2FrameCtrl & MASK_TO_DS_FROM_DS) == MASK_FC_TO_DS) ?\
+		TRUE : FALSE)
 
 #define RXM_IS_FROM_DS(_u2FrameCtrl) \
-	(((_u2FrameCtrl & MASK_TO_DS_FROM_DS ) == MASK_FC_FROM_DS) ? TRUE : FALSE)
+	(((_u2FrameCtrl & MASK_TO_DS_FROM_DS) == MASK_FC_FROM_DS) ?\
+		TRUE : FALSE)
 
 /*******************************************************************************
  *                   F U N C T I O N   D E C L A R A T I O N S

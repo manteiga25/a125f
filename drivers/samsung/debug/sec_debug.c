@@ -35,6 +35,14 @@
 #include <linux/nmi.h>
 #include <linux/sec_hard_reset_hook.h>
 
+/* get time function to log */
+#ifndef arch_irq_stat_cpu
+#define arch_irq_stat_cpu(cpu) 0
+#endif
+#ifndef arch_irq_stat
+#define arch_irq_stat() 0
+#endif
+
 static u32 __initdata sec_extra_info_base = SEC_EXTRA_INFO_BASE;
 static u32 __initdata sec_extra_info_size = SZ_64K;
 
@@ -346,28 +354,22 @@ void sec_upload_cause(void *buf)
 
 static void sec_dump_one_task_info(struct task_struct *tsk, bool is_main)
 {
-	char state_array[] = {'R', 'S', 'D', 'T', 't', 'Z', 'X', 'x', 'K', 'W'};
+	char state_array[] = {'R', 'S', 'D', 'T', 't', 'X', 'Z', 'P', 'x', 'K', 'W', 'I', 'N'};
 	unsigned char idx = 0;
-	unsigned long state = (tsk->state & TASK_REPORT) | tsk->exit_state;
+	unsigned long state;
 	unsigned long wchan;
 	unsigned long pc = 0;
 	char symname[KSYM_NAME_LEN];
-	int permitted;
-	struct mm_struct *mm;
 
-	permitted = ptrace_may_access(tsk, PTRACE_MODE_READ_FSCREDS | PTRACE_MODE_NOAUDIT);
-	mm = get_task_mm(tsk);
-	if (mm) {
-		if (permitted)
-			pc = KSTK_EIP(tsk);
-	}
+	if ((tsk == NULL) || !try_get_task_stack(tsk))
+		return;
+	state = tsk->state | tsk->exit_state;
+
+	pc = KSTK_EIP(tsk);
 
 	wchan = get_wchan(tsk);
 	if (lookup_symbol_name(wchan, symname) < 0) {
-		if (!ptrace_may_access(tsk, PTRACE_MODE_READ_FSCREDS))
-			snprintf(symname, KSYM_NAME_LEN,  "_____");
-		else
-			snprintf(symname, KSYM_NAME_LEN, "%lu", wchan);
+		snprintf(symname, KSYM_NAME_LEN, "%lu", wchan);
 	}
 
 	while (state) {
@@ -377,14 +379,21 @@ static void sec_dump_one_task_info(struct task_struct *tsk, bool is_main)
 
 	touch_softlockup_watchdog();
 
-	pr_info("%8d %8d %8d %16lld %c(%d) %3d  %16lx %16lx  %16lx %c %16s [%s]\n",
+	pr_info("%8d %8d %8d %16lld %c(%d) %3d	%16lx %16lx  %16lx %c %16s [%s]\n",
 			tsk->pid, (int)(tsk->utime), (int)(tsk->stime),
 			tsk->se.exec_start, state_array[idx], (int)(tsk->state),
 			task_cpu(tsk), wchan, pc, (unsigned long)tsk,
 			is_main ? '*' : ' ', tsk->comm, symname);
 
-	if (tsk->state == TASK_RUNNING || task_contributes_to_load(tsk)) {
+	if (tsk->state == TASK_RUNNING ||
+		tsk->state == TASK_WAKING ||
+		task_contributes_to_load(tsk)) {
 			print_worker_info(KERN_INFO, tsk);
+
+			if (tsk->on_cpu && tsk->on_rq &&
+				tsk->cpu != smp_processor_id())
+				return;
+
 			show_stack(tsk, NULL);
 			pr_info("\n");
 	}
@@ -397,7 +406,7 @@ static inline struct task_struct *get_next_thread(struct task_struct *tsk)
 				thread_group);
 }
 
-void sec_dump_task_info(void)
+static void sec_dump_task_info(void)
 {
 	struct task_struct *frst_tsk;
 	struct task_struct *curr_tsk;
@@ -434,6 +443,45 @@ void sec_dump_task_info(void)
 			break;
 	}
 	pr_info(" ----------------------------------------------------------------------------------------------------------------------------\n");
+}
+
+static void sec_dump_irq_info(void)
+{
+	int i, j;
+	unsigned long long sum = 0;
+
+	for_each_possible_cpu(i) {
+		sum += kstat_cpu_irqs_sum(i);
+		sum += arch_irq_stat_cpu(i);
+	}
+	sum += arch_irq_stat();
+
+	pr_info("\n");
+	pr_info("<irq info>");
+	pr_info("------------------------------------------------------------------\n");
+	pr_info("sum irq : %llu", sum);
+	pr_info("------------------------------------------------------------------\n");
+
+	for_each_irq_nr(j) {
+		unsigned int irq_stat = kstat_irqs(j);
+
+		if (irq_stat) {
+			struct irq_desc *desc = irq_to_desc(j);
+			const char *name;
+
+			name = desc->action ? (desc->action->name ? desc->action->name : "???") : "???";
+			pr_info("irq-%-4d(hwirq-%-4d) : %8u %s\n",
+				j, (int)desc->irq_data.hwirq, irq_stat, name);
+		}
+	}
+
+	pr_info("------------------------------------------------------------------\n");
+}
+
+void sec_debug_dump_info(void)
+{
+	sec_dump_task_info();
+	sec_dump_irq_info();
 }
 
 static int sec_debug_check_magic(struct sec_debug_shared_info *sdi)

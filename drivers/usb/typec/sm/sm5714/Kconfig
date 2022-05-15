@@ -5,7 +5,7 @@
 comment "SM5714 configs"
 
 config PDIC_SM5714
-	bool "Using SM5714 USB PD"
+	tristate "Using SM5714 USB PD"
 	default n
 	help
 	  If you say yes here you will get support for

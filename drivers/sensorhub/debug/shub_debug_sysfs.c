@@ -174,9 +174,7 @@ static ssize_t sensor_dump_store(struct device *dev, struct device_attribute *at
 		return -EINVAL;
 
 	if ((strcmp(name, "all")) == 0) {
-#ifdef CONFIG_SHUB_DUMP
 		sensorhub_save_ram_dump();
-#endif
 		ret = send_all_sensor_dump_command();
 	} else {
 		if (strcmp(name, "accelerometer") == 0)

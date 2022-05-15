@@ -15,9 +15,6 @@ int sensorhub_refresh_func(void);
 void sensorhub_fs_ready(void);
 bool sensorhub_is_working(void);
 
-#ifdef CONFIG_SHUB_DUMP
-int get_sensorhub_dump_size(void);
 void sensorhub_save_ram_dump(void);
-#endif
 
 #endif

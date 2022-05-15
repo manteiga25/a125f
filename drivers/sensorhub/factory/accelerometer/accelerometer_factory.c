@@ -21,7 +21,6 @@
 #include "../../utility/shub_utility.h"
 #include "../../utility/shub_file_manager.h"
 #include "../../comm/shub_comm.h"
-#include "accelerometer_factory.h"
 
 #include <linux/delay.h>
 #include <linux/slab.h>
@@ -37,7 +36,20 @@
 /*************************************************************************/
 
 static struct device *accel_sysfs_device;
-static struct device_attribute **chipset_attrs;
+
+static ssize_t name_show(struct device *dev, struct device_attribute *attr, char *buf)
+{
+	struct shub_sensor *sensor = get_sensor(SENSOR_TYPE_ACCELEROMETER);
+
+	return sprintf(buf, "%s\n", sensor->chipset_name);
+}
+
+static ssize_t vendor_show(struct device *dev, struct device_attribute *attr, char *buf)
+{
+	struct shub_sensor *sensor = get_sensor(SENSOR_TYPE_ACCELEROMETER);
+
+	return sprintf(buf, "%s\n", sensor->vendor);
+}
 
 static ssize_t accel_calibration_show(struct device *dev, struct device_attribute *attr, char *buf)
 {
@@ -220,31 +232,79 @@ static ssize_t accel_lowpassfilter_store(struct device *dev, struct device_attri
 	return size;
 }
 
+
+static ssize_t selftest_show(struct device *dev, struct device_attribute *attr, char *buf)
+{
+	char *buffer = NULL;
+	int buffer_length = 0;
+	s8 init_status = 0, result = -1;
+	u16 diff_axis[3] = {0, };
+	u16 shift_ratio_N[3] = {0, };
+	int ret = 0;
+
+	ret = shub_send_command_wait(CMD_GETVALUE, SENSOR_TYPE_ACCELEROMETER, SENSOR_FACTORY, 3000, NULL, 0, &buffer,
+				     &buffer_length, true);
+
+	if (ret < 0) {
+		shub_errf("shub_send_command_wait Fail %d", ret);
+		ret = sprintf(buf, "%d,%d,%d,%d\n", -5, 0, 0, 0);
+		return ret;
+	}
+
+	if (buffer_length != 14) {
+		shub_errf("length err %d", buffer_length);
+		ret = sprintf(buf, "%d,%d,%d,%d\n", -5, 0, 0, 0);
+		kfree(buffer);
+
+		return -EINVAL;
+	}
+
+	init_status = buffer[0];
+	diff_axis[0] = ((s16)(buffer[2] << 8)) + buffer[1];
+	diff_axis[1] = ((s16)(buffer[4] << 8)) + buffer[3];
+	diff_axis[2] = ((s16)(buffer[6] << 8)) + buffer[5];
+
+	/* negative axis */
+
+	shift_ratio_N[0] = ((s16)(buffer[8] << 8)) + buffer[7];
+	shift_ratio_N[1] = ((s16)(buffer[10] << 8)) + buffer[9];
+	shift_ratio_N[2] = ((s16)(buffer[12] << 8)) + buffer[11];
+	result = buffer[13];
+
+	shub_infof("%d, %d, %d, %d, %d, %d, %d, %d\n", init_status, result, diff_axis[0], diff_axis[1], diff_axis[2],
+		   shift_ratio_N[0], shift_ratio_N[1], shift_ratio_N[2]);
+
+	ret = sprintf(buf, "%d,%d,%d,%d,%d,%d,%d\n", result, diff_axis[0], diff_axis[1], diff_axis[2], shift_ratio_N[0],
+		      shift_ratio_N[1], shift_ratio_N[2]);
+
+	kfree(buffer);
+
+	return ret;
+}
+
+static DEVICE_ATTR_RO(name);
+static DEVICE_ATTR_RO(vendor);
 static DEVICE_ATTR_RO(raw_data);
 static DEVICE_ATTR(calibration, 0664, accel_calibration_show, accel_calibration_store);
 static DEVICE_ATTR(reactive_alert, 0664, accel_reactive_alert_show, accel_reactive_alert_store);
 static DEVICE_ATTR(lowpassfilter, 0220, NULL, accel_lowpassfilter_store);
+static DEVICE_ATTR_RO(selftest);
 
 static struct device_attribute *acc_attrs[] = {
+	&dev_attr_name,
+	&dev_attr_vendor,
 	&dev_attr_calibration,
 	&dev_attr_raw_data,
 	&dev_attr_reactive_alert,
 	&dev_attr_lowpassfilter,
+	&dev_attr_selftest,
 	NULL,
-};
-
-typedef struct device_attribute** (*get_chipset_dev_attrs)(char *);
-get_chipset_dev_attrs get_acc_chipset_dev_attrs[] = {
-	get_accelerometer_icm42605m_dev_attrs,
-	get_accelerometer_lsm6dsl_dev_attrs,
-	get_accelerometer_lis2dlc12_dev_attrs,
-	get_accelerometer_lsm6dsotr_dev_attrs,
 };
 
 void initialize_accelerometer_sysfs(void)
 {
 	struct shub_sensor *sensor = get_sensor(SENSOR_TYPE_ACCELEROMETER);
-	int ret, i;
+	int ret;
 
 	ret = sensor_device_create(&accel_sysfs_device, NULL, "accelerometer_sensor");
 	if (ret < 0) {
@@ -257,24 +317,10 @@ void initialize_accelerometer_sysfs(void)
 		shub_errf("fail to add %s sysfs device attr", sensor->name);
 		return;
 	}
-
-	for (i = 0; i < ARRAY_LEN(get_acc_chipset_dev_attrs); i++) {
-		chipset_attrs = get_acc_chipset_dev_attrs[i](sensor->chipset_name);
-		if (chipset_attrs) {
-			ret = add_sensor_device_attr(accel_sysfs_device, chipset_attrs);
-			if (ret < 0) {
-				shub_errf("fail to add sysfs chipset device attr(%d)", i);
-				return;
-			}
-			break;
-		}
-	}
 }
 
 void remove_accelerometer_sysfs(void)
 {
-	if (chipset_attrs)
-		remove_sensor_device_attr(accel_sysfs_device, chipset_attrs);
 	remove_sensor_device_attr(accel_sysfs_device, acc_attrs);
 	sensor_device_destroy(accel_sysfs_device);
 	accel_sysfs_device = NULL;
@@ -282,7 +328,7 @@ void remove_accelerometer_sysfs(void)
 
 void initialize_accelerometer_factory(bool en)
 {
-	if (!get_sensor_probe_state(SENSOR_TYPE_ACCELEROMETER))
+	if (!get_sensor(SENSOR_TYPE_ACCELEROMETER))
 		return;
 
 	if (en)

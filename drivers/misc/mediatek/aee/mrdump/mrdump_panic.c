@@ -211,7 +211,7 @@ int mrdump_common_die(int fiq_step, int reboot_reason, const char *msg,
 		/* FALLTHRU */
 	default:
 #ifdef CONFIG_SEC_DEBUG
-	sec_dump_task_info();
+	sec_debug_dump_info();
 #endif
 #ifdef CONFIG_SEC_DEBUG_AUTO_COMMENT
 	dump_backtrace_auto_comment(regs, NULL);

@@ -114,12 +114,15 @@ void pre_report_event_proximity_stk3x6x(void)
 	proximity_open_calibration();
 }
 
-void init_proximity_stk3x6x(struct proximity_data *data)
+int init_proximity_stk3x6x(struct proximity_data *data)
 {
 	if (data->threshold_data == NULL) {
-		data->threshold_data =
-		    (struct proximity_stk3x6x_data *)kzalloc(sizeof(struct proximity_stk3x6x_data), GFP_KERNEL);
+		data->threshold_data = kzalloc(sizeof(struct proximity_stk3x6x_data), GFP_KERNEL);
+		if (!data->threshold_data)
+			return -ENOMEM;
 	}
+
+	return 0;
 }
 
 struct proximity_chipset_funcs prox_stk3x6x_ops = {

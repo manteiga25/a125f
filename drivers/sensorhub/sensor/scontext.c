@@ -370,20 +370,25 @@ void print_scontext_debug(void)
 	/* print nothing for debug */
 }
 
-void init_scontext(bool en)
+int init_scontext(bool en)
 {
 	struct shub_sensor *sensor = get_sensor(SENSOR_TYPE_SCONTEXT);
 
 	if (!sensor)
-		return;
+		return 0;
 
 	if (en) {
 		strcpy(sensor->name, "scontext_iio");
 		sensor->receive_event_size = 0;
 		sensor->report_event_size = 64;
 		sensor->event_buffer.value = kzalloc(sensor->report_event_size, GFP_KERNEL);
+		if (!sensor->event_buffer.value)
+			goto err_no_mem;
 
 		sensor->funcs = kzalloc(sizeof(struct sensor_funcs), GFP_KERNEL);
+		if (!sensor->funcs)
+			goto err_no_mem;
+
 		sensor->funcs->print_debug = print_scontext_debug;
 	} else {
 		kfree(sensor->event_buffer.value);
@@ -392,4 +397,15 @@ void init_scontext(bool en)
 		kfree(sensor->funcs);
 		sensor->funcs = NULL;
 	}
+
+	return 0;
+
+err_no_mem:
+	kfree(sensor->event_buffer.value);
+	sensor->event_buffer.value = NULL;
+
+	kfree(sensor->funcs);
+	sensor->funcs = NULL;
+
+	return -ENOMEM;
 }

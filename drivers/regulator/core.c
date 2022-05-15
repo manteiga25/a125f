@@ -2059,17 +2059,13 @@ static int regulator_ena_gpio_request(struct regulator_dev *rdev,
 		}
 	}
 
-#if IS_ENABLED(CONFIG_SEC_PM)
-	if (!config->skip_gpio_request) {
-#endif
-	ret = gpio_request_one(config->ena_gpio,
-				GPIOF_DIR_OUT | config->ena_gpio_flags,
-				rdev_get_name(rdev));
-	if (ret)
-		return ret;
-#if IS_ENABLED(CONFIG_SEC_PM)
+	if (!config->ena_gpiod) {
+		ret = gpio_request_one(config->ena_gpio,
+				       GPIOF_DIR_OUT | config->ena_gpio_flags,
+				       rdev_get_name(rdev));
+		if (ret)
+			return ret;
 	}
-#endif
 
 	pin = kzalloc(sizeof(struct regulator_enable_gpio), GFP_KERNEL);
 	if (pin == NULL) {
@@ -2080,12 +2076,7 @@ static int regulator_ena_gpio_request(struct regulator_dev *rdev,
 
 	pin->gpiod = gpiod;
 	pin->ena_gpio_invert = config->ena_gpio_invert;
-#if IS_ENABLED(CONFIG_SEC_PM)
-	if (!config->skip_gpio_request)
-		list_add(&pin->list, &regulator_ena_gpio_list);
-#else
 	list_add(&pin->list, &regulator_ena_gpio_list);
-#endif
 
 update_ena_gpio_to_rdev:
 	pin->request_count++;
@@ -2572,11 +2563,7 @@ static int _regulator_is_enabled(struct regulator_dev *rdev)
 {
 	/* A GPIO control always takes precedence */
 	if (rdev->ena_pin)
-#if IS_ENABLED(CONFIG_SEC_PM)
-		return rdev->ena_gpio_state | gpiod_get_value_cansleep(rdev->ena_pin->gpiod);
-#else
 		return rdev->ena_gpio_state;
-#endif
 
 	/* If we don't know then assume that the regulator is always on */
 	if (!rdev->desc->ops->is_enabled)
@@ -4973,10 +4960,6 @@ static int regulator_late_cleanup(struct device *dev, void *data)
 	/* If we can't read the status assume it's on. */
 	if (ops->is_enabled)
 		enabled = ops->is_enabled(rdev);
-#if IS_ENABLED(CONFIG_SEC_PM)
-	else if (rdev->ena_pin)
-		enabled = !gpiod_get_value_cansleep(rdev->ena_pin->gpiod);
-#endif
 	else
 		enabled = 1;
 

@@ -19,3 +19,4 @@ void print_dataframe(char *dataframe, int frame_len);
 int print_system_info(char *dataframe, int *index);
 
 bool check_debug_log_state(int log_type);
+void set_open_cal_result(int type, int result);

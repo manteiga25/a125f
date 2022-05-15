@@ -1196,8 +1196,16 @@ static int _mmc_sd_resume(struct mmc_host *host)
 {
 	int err = 0;
 
-	if (!(host->bus_resume_flags & MMC_BUSRESUME_ENTER_IO))
+#ifdef CONFIG_MMC_BLOCK_DEFERRED_RESUME
+	bool claim_host = false;
+
+	if (!(host->bus_resume_flags & MMC_BUSRESUME_ENTER_IO)) {
 		mmc_claim_host(host);
+		claim_host = true;
+	}
+#else
+	mmc_claim_host(host);
+#endif
 
 	if (!mmc_card_suspended(host->card))
 		goto out;
@@ -1207,8 +1215,14 @@ static int _mmc_sd_resume(struct mmc_host *host)
 	mmc_card_clr_suspended(host->card);
 
 out:
-	if (!(host->bus_resume_flags & MMC_BUSRESUME_ENTER_IO))
+#ifdef CONFIG_MMC_BLOCK_DEFERRED_RESUME
+	if (claim_host) {
 		mmc_release_host(host);
+		claim_host = false;
+	}
+#else
+	mmc_release_host(host);
+#endif
 
 	return err;
 }

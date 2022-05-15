@@ -1,4 +1,5 @@
 #include "../comm/shub_comm.h"
+#include "../debug/shub_debug.h"
 #include "../sensor/pressure.h"
 #include "../sensorhub/shub_device.h"
 #include "../sensormanager/shub_sensor.h"
@@ -11,6 +12,28 @@
 
 #define CALIBRATION_FILE_PATH "/efs/FactoryApp/baro_delta"
 
+static unsigned int parse_int(const char *s, unsigned int base, int *p)
+{
+	int result = 0;
+	int i = 0, size = 0, val = 0;
+	int negative_value = 1;
+
+	for (i = 0; i < 10; i++) {
+		if ('-' == s[i])
+			negative_value = -1;
+		else if ('0' <= s[i] && s[i] <= '9')
+			val = s[i] - '0';
+		else
+			break;
+
+		result = result * base + val;
+		size++;
+	}
+	*p = (result * negative_value);
+
+	return size;
+}
+
 static int open_pressure_calibration_file(void)
 {
 	char chBuf[10] = {0, };
@@ -20,17 +43,19 @@ static int open_pressure_calibration_file(void)
 	ret = shub_file_read(CALIBRATION_FILE_PATH, chBuf, sizeof(chBuf), 0);
 	if (ret < 0) {
 		shub_errf("Can't read the cal data from file (%d)\n", ret);
-		return ret;
+		goto exit;
 	}
 
-	ret = kstrtoint(chBuf, 10, &sensor_value->pressure_cal);
+	ret = parse_int(chBuf, 10, &sensor_value->pressure_cal);
 	if (ret < 0) {
 		shub_errf("kstrtoint failed. %d", ret);
-		return ret;
+		goto exit;
 	}
 
 	shub_infof("open pressure calibration %d", sensor_value->pressure_cal);
 
+exit:
+	set_open_cal_result(SENSOR_TYPE_PRESSURE, ret);
 	return ret;
 }
 
@@ -62,12 +87,12 @@ void print_pressure_debug(void)
 		  sensor_value->temperature, event->timestamp, sensor->sampling_period, sensor->max_report_latency);
 }
 
-void init_pressure(bool en)
+int init_pressure(bool en)
 {
 	struct shub_sensor *sensor = get_sensor(SENSOR_TYPE_PRESSURE);
 
 	if (!sensor)
-		return;
+		return 0;
 
 	if (en) {
 		strcpy(sensor->name, "pressure_sensor");
@@ -75,8 +100,13 @@ void init_pressure(bool en)
 		sensor->receive_event_size = 6;
 		sensor->report_event_size = 14;
 		sensor->event_buffer.value = kzalloc(sizeof(struct pressure_event), GFP_KERNEL);
+		if (!sensor->event_buffer.value)
+			goto err_no_mem;
 
 		sensor->funcs = kzalloc(sizeof(struct sensor_funcs), GFP_KERNEL);
+		if (!sensor->funcs)
+			goto err_no_mem;
+
 		sensor->funcs->print_debug = print_pressure_debug;
 		sensor->funcs->init_chipset = init_pressure_chipset;
 		sensor->funcs->open_calibration_file = open_pressure_calibration_file;
@@ -87,4 +117,14 @@ void init_pressure(bool en)
 		kfree(sensor->event_buffer.value);
 		sensor->event_buffer.value = NULL;
 	}
+	return 0;
+
+err_no_mem:
+	kfree(sensor->event_buffer.value);
+	sensor->event_buffer.value = NULL;
+
+	kfree(sensor->funcs);
+	sensor->funcs = NULL;
+
+	return -ENOMEM;
 }

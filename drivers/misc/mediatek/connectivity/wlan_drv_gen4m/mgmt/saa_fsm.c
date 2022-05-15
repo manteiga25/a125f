@@ -1294,9 +1294,54 @@ uint32_t saaFsmRunEventRxDeauth(IN struct ADAPTER *prAdapter,
 
 			/* if state != CONNECTED, don't do disconnect again */
 			if (kalGetMediaStateIndicated(prAdapter->prGlueInfo,
-				ucBssIndex) !=
-				MEDIA_STATE_CONNECTED)
+				ucBssIndex) != MEDIA_STATE_CONNECTED) {
+
+#if CFG_TC10_FEATURE
+				DBGLOG(SAA, INFO,
+					"Receive DEAUTH when state == [%s]\n",
+					apucDebugAAState[
+						prStaRec->eAuthAssocState]);
+
+				if (authProcessRxDeauthFrame(prSwRfb,
+					prStaRec->aucMacAddr,
+					&prStaRec->u2ReasonCode)
+						== WLAN_STATUS_SUCCESS) {
+
+					/* Record the Status Code of
+					 * ASSOC Request
+					 */
+					prStaRec->u2StatusCode =
+						STATUS_CODE_ASSOC_TIMEOUT;
+
+					cnmTimerStopTimer(prAdapter,
+					   &prStaRec->rTxReqDoneOrRxRespTimer);
+
+					cnmStaRecChangeState(prAdapter,
+						prStaRec, STA_STATE_1);
+
+					DBGLOG(SAA, INFO,
+						"Assoc Req was rejected by DEAUTH from ["
+						MACSTR "], Reason Code = %d\n",
+						MAC2STR(prStaRec->aucMacAddr),
+						prStaRec->u2ReasonCode);
+
+					/* Reset Send Auth/(Re)Assoc Frame Count
+					 */
+					prStaRec->ucTxAuthAssocRetryCount = 0;
+
+					/* update RCPI */
+					ASSERT(prSwRfb->prRxStatusGroup3);
+					prStaRec->ucRCPI =
+					nicRxGetRcpiValueFromRxv(
+						prAdapter, RCPI_MODE_MAX,
+						prSwRfb);
+
+					saaFsmSteps(prAdapter, prStaRec,
+						AA_STATE_IDLE, NULL);
+				}
+#endif
 				break;
+			}
 
 			if (prStaRec->ucStaState > STA_STATE_1) {
 

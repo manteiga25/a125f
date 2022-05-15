@@ -315,14 +315,14 @@ static void glNotifyChipReset(void)
 	char cid[] = "MT6631";
 
 	DBGLOG(AIS, INFO, "glNotifyChipReset start\n");
-	prGlueInfo = (struct GLUE_INFO *) wiphy_priv(
-			     wlanGetWiphy());
+	WIPHY_PRIV(wlanGetWiphy(), prGlueInfo);
+
 	if (prGlueInfo == NULL) {
 		DBGLOG(INIT, ERROR, "prGlueInfo null\n");
 		return;
 	}
 
-	wiphy = priv_to_wiphy(prGlueInfo);
+	wiphy = wlanGetWiphy();
 	if (wiphy == NULL) {
 		DBGLOG(INIT, ERROR, "wiphy null\n");
 		return;
@@ -611,7 +611,7 @@ static void triggerHifDumpIfNeed(void)
 	if (fgIsResetting)
 		return;
 
-	prGlueInfo = (struct GLUE_INFO *) wiphy_priv(wlanGetWiphy());
+	WIPHY_PRIV(wlanGetWiphy(), prGlueInfo);
 	if (!prGlueInfo || !prGlueInfo->u4ReadyFlag || !prGlueInfo->prAdapter)
 		return;
 
@@ -627,7 +627,7 @@ static void dumpWlanThreadsIfNeed(void)
 {
 	struct GLUE_INFO *prGlueInfo;
 
-	prGlueInfo = (struct GLUE_INFO *) wiphy_priv(wlanGetWiphy());
+	WIPHY_PRIV(wlanGetWiphy(), prGlueInfo);
 	if (!prGlueInfo || !prGlueInfo->u4ReadyFlag || !prGlueInfo->prAdapter)
 		return;
 
@@ -803,7 +803,7 @@ int glRstwlanPreWholeChipReset(enum consys_drv_type type, char *reason)
 	bool bRet = 0;
 	struct GLUE_INFO *prGlueInfo;
 
-	prGlueInfo = (struct GLUE_INFO *) wiphy_priv(wlanGetWiphy());
+	WIPHY_PRIV(wlanGetWiphy(), prGlueInfo);
 	DBGLOG(INIT, INFO,
 			"Enter glRstwlanPreWholeChipReset.\n");
 	while (get_wifi_process_status() == 1) {
@@ -829,8 +829,8 @@ int glRstwlanPreWholeChipReset(enum consys_drv_type type, char *reason)
 		while ((!prGlueInfo) ||
 			(prGlueInfo->u4ReadyFlag == 0) ||
 			(g_IsWfsysRstDone == FALSE)) {
-			prGlueInfo =
-				(struct GLUE_INFO *) wiphy_priv(wlanGetWiphy());
+			WIPHY_PRIV(wlanGetWiphy(), prGlueInfo);
+
 			DBGLOG(REQ, WARN, "wifi driver is not ready\n");
 			if (g_IsWfsysResetOnFail == TRUE) {
 				DBGLOG(REQ, WARN,
@@ -1080,7 +1080,7 @@ int wlan_reset_thread_main(void *data)
 			KAL_WAKE_LOCK(NULL,
 				      prWlanRstThreadWakeLock);
 #endif
-		prGlueInfo = (struct GLUE_INFO *) wiphy_priv(wlanGetWiphy());
+		WIPHY_PRIV(wlanGetWiphy(), prGlueInfo);
 		if (test_and_clear_bit(GLUE_FLAG_RST_START_BIT, &g_ulFlag) &&
 			 ((prGlueInfo) && (prGlueInfo->u4ReadyFlag))) {
 			if (KAL_WAKE_LOCK_ACTIVE(NULL, g_IntrWakeLock))

@@ -1,6 +1,14 @@
 #
 # Near Field Communication (NFC) devices
 #
+config SAMSUNG_NFC
+	tristate "Samsung NFC driver for module build"
+	default n
+	help
+	  Say Y here if you want to build support for NFC (Near field
+	  communication) devices.
+	  To compile this support as a module, choose M here: the module will
+	  be called nfc.
 
 config SEC_NFC
 	bool "Samsung NFC driver"
@@ -51,6 +59,15 @@ config SEC_NFC_LOGGER
 	  NFC log will be recorded at proc folder.
 	  but will not included at dumpstate log.
 	  so need to copy this file to log folder.
+
+config SEC_NFC_DUPLICATED_IRQ_WQ
+	bool "NFC duplicated irq wq"
+	default n
+	help
+	  Enable NFC duplicated irq w/a.
+	  If the interrupt occurs twice continuously, the i2c_info.
+	  read_irq value is returned to the previous value.
+	  Apply W/A received from LSI
 
 config SEC_STAR
         tristate "LSI star platform"

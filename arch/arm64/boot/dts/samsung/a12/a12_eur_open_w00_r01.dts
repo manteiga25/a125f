@@ -206,13 +206,6 @@
 			aicl,threshold_time=<300>;
 		};
 #if 0
-		mipi_overflow {
-			mipi_overflow,label="MIPI Overflow";
-			mipi_overflow,threshold_count=<${mipi_overflow_threshold_count}>;
-			mipi_overflow,threshold_time=<${mipi_overflow_threshold_time}>;
-		};
-#endif
-#if 0
 		motto {
 			motto,label="motto info base";
 			motto,info_bootcheck_base = <${motto_info_bootcheck_base}>;
@@ -1751,8 +1744,8 @@
 
 		battery,cisd_alg_index = <8>;
 		battery,cisd_max_voltage_thr = <4400>; /* batttery ovp dettection voltage */
-		battery,ignore_cisd_index = <0 960>; /* Do not use AFC_FAIL to DROP_VALUE */
-		battery,ignore_cisd_index_d = <0 120>; /* Do not use AFC_FAIL_PER_DAY to DROP_VALUE_PER_DAY */
+		battery,ignore_cisd_index = <0 0>;
+		battery,ignore_cisd_index_d = <0 80>; /* Do not use BUCK_OFF_PER_DAY, DROP_SENSOR_PER_DAY */
 
 		battery,expired_time = <10800>;
 		battery,recharging_expired_time = <5400>;

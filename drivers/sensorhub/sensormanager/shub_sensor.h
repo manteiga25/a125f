@@ -78,6 +78,6 @@ struct shub_sensor {
 	struct sensor_funcs *funcs;
 };
 
-typedef void (*init_sensor)(bool en);
+typedef int (*init_sensor)(bool en);
 
 #endif /* __SHUB_SENSOR_H_ */

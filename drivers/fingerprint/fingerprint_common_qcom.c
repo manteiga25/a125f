@@ -10,6 +10,22 @@ extern int set_freq_limit(unsigned int id, unsigned int freq);
 #define FINGER_ID 2
 #define LIMIT_RELEASE -1
 
+
+void spi_get_ctrldata(struct spi_device *spi)
+{
+
+}
+
+int spi_clk_register(struct spi_clk_setting *clk_setting, struct device *dev)
+{
+	return 0;
+}
+
+int spi_clk_unregister(struct spi_clk_setting *clk_setting)
+{
+	return 0;
+}
+
 int spi_clk_enable(struct spi_clk_setting *clk_setting)
 {
 #ifdef ENABLE_SENSORS_FPRINT_SECURE

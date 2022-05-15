@@ -15,6 +15,7 @@ static struct workqueue_struct *debug_wq;
 static struct work_struct work_debug;
 
 static int check_noevent_reset_cnt;
+static char open_cal_result[9];
 
 #define SHUB_DEBUG_TIMER_SEC    (5 * HZ)
 
@@ -80,11 +81,13 @@ static void debug_work_func(struct work_struct *work)
 			print_sensor_debug(type);
 	}
 
-	shub_infof("FW(%d):%u, Sensor state: 0x%llx, En: 0x%llx, Reset cnt: %d[%d : C %u(%u, %u), N %u, %u]",
-		get_firmware_type(), get_firmware_rev(),
-		get_sensors_legacy_probe_state(), en_state, data->cnt_reset, data->cnt_shub_reset[RESET_TYPE_MAX],
-		data->cnt_shub_reset[RESET_TYPE_KERNEL_COM_FAIL], get_cnt_comm_fail(), get_cnt_timeout(),
-		data->cnt_shub_reset[RESET_TYPE_KERNEL_NO_EVENT], data->cnt_shub_reset[RESET_TYPE_HUB_NO_EVENT]);
+	shub_infof("FW(%d):%u, Sensor state: 0x%llx, En: 0x%llx, Reset cnt: %d[%d : C %u(%u, %u), N %u, %u]"
+		   ", Cal result : [M:%c, P:%c]",
+		   get_firmware_type(), get_firmware_rev(),
+		   get_sensors_legacy_probe_state(), en_state, data->cnt_reset, data->cnt_shub_reset[RESET_TYPE_MAX],
+		   data->cnt_shub_reset[RESET_TYPE_KERNEL_COM_FAIL], get_cnt_comm_fail(), get_cnt_timeout(),
+		   data->cnt_shub_reset[RESET_TYPE_KERNEL_NO_EVENT], data->cnt_shub_reset[RESET_TYPE_HUB_NO_EVENT],
+		   open_cal_result[SENSOR_TYPE_GEOMAGNETIC_FIELD], open_cal_result[SENSOR_TYPE_PRESSURE]);
 
 	if (is_shub_working())
 		check_no_event();
@@ -96,14 +99,27 @@ static void debug_timer_func(struct timer_list *timer)
 	mod_timer(&debug_timer, round_jiffies_up(jiffies + SHUB_DEBUG_TIMER_SEC));
 }
 
+void set_open_cal_result(int type, int result)
+{
+	if (result >= 0)
+		open_cal_result[type] = 'P';
+	else
+		open_cal_result[type] = 'F';
+}
+
 int init_shub_debug(void)
 {
+	int type;
+
 	timer_setup(&debug_timer, debug_timer_func, 0);
 	debug_wq = create_singlethread_workqueue("shub_debug_wq");
 	if (!debug_wq)
 		return -ENOMEM;
 
 	INIT_WORK(&work_debug, debug_work_func);
+
+	for (type = 0 ; type <= SENSOR_TYPE_PROXIMITY ; type++)
+		open_cal_result[type] = 'N';
 
 	return 0;
 }

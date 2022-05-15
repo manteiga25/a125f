@@ -17,12 +17,12 @@ void print_gyroscope_uncal_debug(void)
 		  sensor->sampling_period, sensor->max_report_latency);
 }
 
-void init_gyroscope_uncal(bool en)
+int init_gyroscope_uncal(bool en)
 {
 	struct shub_sensor *sensor = get_sensor(SENSOR_TYPE_GYROSCOPE_UNCALIBRATED);
 
 	if (!sensor)
-		return;
+		return 0;
 
 	if (en) {
 		strcpy(sensor->name, "uncal_gyro_sensor");
@@ -30,8 +30,13 @@ void init_gyroscope_uncal(bool en)
 		sensor->receive_event_size = 12;
 		sensor->report_event_size = 12;
 		sensor->event_buffer.value = kzalloc(sizeof(struct uncal_gyro_event), GFP_KERNEL);
+		if (!sensor->event_buffer.value)
+			goto err_no_mem;
 
 		sensor->funcs = kzalloc(sizeof(struct sensor_funcs), GFP_KERNEL);
+		if (!sensor->funcs)
+			goto err_no_mem;
+
 		sensor->funcs->print_debug = print_gyroscope_uncal_debug;
 	} else {
 		kfree(sensor->event_buffer.value);
@@ -40,4 +45,15 @@ void init_gyroscope_uncal(bool en)
 		kfree(sensor->funcs);
 		sensor->funcs = NULL;
 	}
+
+	return 0;
+
+err_no_mem:
+	kfree(sensor->event_buffer.value);
+	sensor->event_buffer.value = NULL;
+
+	kfree(sensor->funcs);
+	sensor->funcs = NULL;
+
+	return -ENOMEM;
 }

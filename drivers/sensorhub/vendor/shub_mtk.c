@@ -2,6 +2,7 @@
 #include "../sensorhub/shub_device.h"
 #include "../sensormanager/shub_sensor_type.h"
 #include "../utility/shub_utility.h"
+#include "../debug/shub_dump.h"
 #include "shub_mtk.h"
 
 #include <linux/delay.h>
@@ -136,4 +137,21 @@ int sensorhub_reset(void)
 
 void sensorhub_fs_ready(void)
 {
+}
+
+void sensorhub_save_ram_dump(void)
+{
+}
+
+void shub_dump_write_file(void *dump_data, int dump_size)
+{
+	struct shub_data_t *data = get_shub_data();
+	int dump_type;
+
+	if (data->reset_type < RESET_TYPE_MAX)
+		dump_type = DUMP_TYPE_BASE + data->reset_type;
+	else
+		dump_type = 1;
+
+	write_shub_dump_file((char *)dump_data, dump_size, dump_type, 4);
 }

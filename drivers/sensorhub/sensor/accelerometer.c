@@ -168,12 +168,12 @@ void print_accelerometer_debug(void)
 		  sensor->max_report_latency);
 }
 
-void init_accelerometer(bool en)
+int init_accelerometer(bool en)
 {
 	struct shub_sensor *sensor = get_sensor(SENSOR_TYPE_ACCELEROMETER);
 
 	if (!sensor)
-		return;
+		return 0;
 
 	if (en) {
 		strcpy(sensor->name, "accelerometer_sensor");
@@ -181,9 +181,17 @@ void init_accelerometer(bool en)
 		sensor->receive_event_size = 6;
 		sensor->report_event_size = 6;
 		sensor->event_buffer.value = kzalloc(sizeof(struct accel_event), GFP_KERNEL);
+		if (!sensor->event_buffer.value)
+			goto err_no_mem;
 
 		sensor->data = kzalloc(sizeof(struct accelerometer_data), GFP_KERNEL);
+		if (!sensor->data)
+			goto err_no_mem;
+
 		sensor->funcs = kzalloc(sizeof(struct sensor_funcs), GFP_KERNEL);
+		if (!sensor->funcs)
+			goto err_no_mem;
+
 		sensor->funcs->sync_status = sync_accelerometer_status;
 		sensor->funcs->print_debug = print_accelerometer_debug;
 		sensor->funcs->set_position = set_accel_position;
@@ -200,6 +208,20 @@ void init_accelerometer(bool en)
 		kfree(sensor->funcs);
 		sensor->funcs = NULL;
 	}
+	return 0;
+
+err_no_mem:
+	shub_errf("err no memory");
+	kfree(sensor->event_buffer.value);
+	sensor->event_buffer.value = NULL;
+
+	kfree(sensor->data);
+	sensor->data = NULL;
+
+	kfree(sensor->funcs);
+	sensor->funcs = NULL;
+
+	return -ENOMEM;
 }
 
 static void print_accelerometer_uncal_debug(void)
@@ -214,12 +236,12 @@ static void print_accelerometer_uncal_debug(void)
 		  event->timestamp, sensor->sampling_period, sensor->max_report_latency);
 }
 
-void init_accelerometer_uncal(bool en)
+int init_accelerometer_uncal(bool en)
 {
 	struct shub_sensor *sensor = get_sensor(SENSOR_TYPE_ACCELEROMETER_UNCALIBRATED);
 
 	if (!sensor)
-		return;
+		return 0;
 
 	if (en) {
 		strcpy(sensor->name, "uncal_accel_sensor");
@@ -227,8 +249,13 @@ void init_accelerometer_uncal(bool en)
 		sensor->receive_event_size = 12;
 		sensor->report_event_size = 12;
 		sensor->event_buffer.value = kzalloc(sizeof(struct uncal_accel_event), GFP_KERNEL);
+		if (!sensor->event_buffer.value)
+			goto err_no_mem;
 
 		sensor->funcs = kzalloc(sizeof(struct sensor_funcs), GFP_KERNEL);
+		if (!sensor->funcs)
+			goto err_no_mem;
+
 		sensor->funcs->print_debug = print_accelerometer_uncal_debug;
 	} else {
 		kfree(sensor->event_buffer.value);
@@ -237,4 +264,14 @@ void init_accelerometer_uncal(bool en)
 		kfree(sensor->funcs);
 		sensor->funcs = NULL;
 	}
+	return 0;
+
+err_no_mem:
+	kfree(sensor->event_buffer.value);
+	sensor->event_buffer.value = NULL;
+
+	kfree(sensor->funcs);
+	sensor->funcs = NULL;
+
+	return -ENOMEM;
 }

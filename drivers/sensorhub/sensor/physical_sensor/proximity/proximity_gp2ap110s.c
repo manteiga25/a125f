@@ -104,10 +104,14 @@ void pre_enable_proximity_gp2ap110s(struct proximity_data *data)
 	set_proximity_setting_mode(data);
 }
 
-void init_proximity_gp2ap110s(struct proximity_data *data)
+int init_proximity_gp2ap110s(struct proximity_data *data)
 {
-	if (data->threshold_data == NULL)
+	if (data->threshold_data == NULL) {
 		data->threshold_data = kzalloc(sizeof(struct proximity_gp2ap110s_data), GFP_KERNEL);
+		if (!data->threshold_data)
+			return -ENOMEM;
+	}
+	return 0;
 }
 
 struct proximity_chipset_funcs prox_gp2ap110s_ops = {

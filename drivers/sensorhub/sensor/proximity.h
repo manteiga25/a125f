@@ -61,7 +61,7 @@ struct proximity_data {
 };
 
 struct proximity_chipset_funcs {
-	void (*init)(struct proximity_data *data);
+	int (*init)(struct proximity_data *data);
 	void (*init_proximity_variable)(struct proximity_data *data);
 	void (*parse_dt)(struct device *dev);
 	u8 (*get_proximity_threshold_mode)(void);
